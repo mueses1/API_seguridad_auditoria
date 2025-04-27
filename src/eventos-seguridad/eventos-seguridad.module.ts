@@ -6,9 +6,9 @@ import { EventoSeguridad } from './entities/eventos-seguridad.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([EventoSeguridad, Usuario])],
-    controllers: [EventosSeguridadController],
-    providers: [EventosSeguridadService],
-    exports: [EventosSeguridadService],
+    imports: [TypeOrmModule.forFeature([EventoSeguridad, Usuario])], // Configura TypeORM para las entidades EventoSeguridad y Usuario en este módulo
+    controllers: [EventosSeguridadController], // Declara el controlador EventosSeguridadController que pertenece a este módulo
+    providers: [EventosSeguridadService], // Declara el proveedor (servicio) EventosSeguridadService que es gestionado por este módulo
+    exports: [EventosSeguridadService], // Exporta el servicio EventosSeguridadService para que pueda ser utilizado por otros módulos
 })
-export class EventosSeguridadModule { }
+export class EventosSeguridadModule { } // Exporta la clase del módulo EventosSeguridadModule

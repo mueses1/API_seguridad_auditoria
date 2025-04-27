@@ -2,22 +2,22 @@ import { IsEnum, IsString, IsNumber, IsOptional, IsNotEmpty } from 'class-valida
 import { TipoEvento } from '../entities/eventos-seguridad.entity';
 
 export class CreateEventoSeguridadDto {
-    @IsEnum(TipoEvento)
-    tipo: TipoEvento;
+    @IsEnum(TipoEvento) // Valida que el valor sea una de las opciones definidas en la enumeración TipoEvento
+    tipo: TipoEvento; // Tipo del evento de seguridad (LOGIN_FALLIDO, USUARIO_BLOQUEADO)
 
-    @IsNumber()
-    @IsOptional()
-    usuario_id?: number;
+    @IsNumber() // Valida que el valor sea un número
+    @IsOptional() // Indica que este campo es opcional
+    usuario_id?: number; // ID del usuario asociado al evento (opcional)
 
-    @IsString()
-    @IsNotEmpty()
-    ip: string;
+    @IsString() // Valida que el valor sea una cadena de texto
+    @IsNotEmpty() // Valida que la cadena no esté vacía
+    ip: string; // Dirección IP desde donde ocurrió el evento
 
-    @IsString()
-    @IsNotEmpty()
-    user_agent: string;
+    @IsString() // Valida que el valor sea una cadena de texto
+    @IsNotEmpty() // Valida que la cadena no esté vacía
+    user_agent: string; // Agente de usuario del cliente que generó el evento
 
-    @IsString()
-    @IsNotEmpty()
-    descripcion: string;
+    @IsString() // Valida que el valor sea una cadena de texto
+    @IsNotEmpty() // Valida que la cadena no esté vacía
+    descripcion: string; // Descripción detallada del evento de seguridad
 }

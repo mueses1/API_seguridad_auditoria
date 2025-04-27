@@ -5,9 +5,9 @@ import { UsuariosService } from './usuarios.service';
 import { Usuario } from './entities/usuario.entity';
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Usuario])],
-    controllers: [UsuariosController],
-    providers: [UsuariosService],
-    exports: [UsuariosService],
+    imports: [TypeOrmModule.forFeature([Usuario])], // Configura TypeORM para la entidad Usuario en este módulo
+    controllers: [UsuariosController], // Declara el controlador UsuariosController que pertenece a este módulo
+    providers: [UsuariosService], // Declara el proveedor (servicio) UsuariosService que es gestionado por este módulo
+    exports: [UsuariosService], // Exporta el servicio UsuariosService para que pueda ser utilizado por otros módulos
 })
-export class UsuariosModule { }
+export class UsuariosModule { } // Exporta la clase del módulo UsuariosModule

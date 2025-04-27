@@ -4,59 +4,59 @@ import { Repository } from 'typeorm';
 import { AccionAdmin, TipoAccionAdmin } from '../entities/accion-admin.entity';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 
-@Injectable()
+@Injectable() // Marca la clase como un proveedor (servicio) de NestJS
 export class AccionAdminService {
     constructor(
-        @InjectRepository(AccionAdmin)
+        @InjectRepository(AccionAdmin) // Inyecta el repositorio de la entidad AccionAdmin
         private accionAdminRepository: Repository<AccionAdmin>,
-        @InjectRepository(Usuario)
+        @InjectRepository(Usuario) // Inyecta el repositorio de la entidad Usuario
         private usuarioRepository: Repository<Usuario>,
     ) { }
 
     async registrarAccion(
-        adminId: number,
-        tipo: TipoAccionAdmin,
-        usuarioAfectadoId: number | null,
-        descripcion: string
+        adminId: number, // ID del administrador que realiza la acción
+        tipo: TipoAccionAdmin, // Tipo de acción administrativa (de la enumeración)
+        usuarioAfectadoId: number | null, // ID del usuario afectado por la acción (opcional)
+        descripcion: string // Descripción de la acción realizada
     ): Promise<AccionAdmin> {
-        // Verificar que el administrador existe
+        // Verificar que el administrador existe y tiene el rol 'admin'
         const admin = await this.usuarioRepository.findOne({
             where: { id: adminId, rol: 'admin' }
         });
 
         if (!admin) {
-            throw new NotFoundException(`No se encontró un administrador con ID ${adminId}`);
+            throw new NotFoundException(`No se encontró un administrador con ID ${adminId}`); // Lanza una excepción si el administrador no existe
         }
 
-        const accion = new AccionAdmin();
-        accion.adminId = admin.id; // Usar el ID del admin verificado
-        accion.tipo = tipo;
-        accion.usuario_afectado_id = usuarioAfectadoId;
-        accion.descripcion = descripcion;
+        const accion = new AccionAdmin(); // Crea una nueva instancia de la entidad AccionAdmin
+        accion.adminId = admin.id; // Asigna el ID del administrador verificado
+        accion.tipo = tipo; // Asigna el tipo de acción
+        accion.usuario_afectado_id = usuarioAfectadoId; // Asigna el ID del usuario afectado
+        accion.descripcion = descripcion; // Asigna la descripción de la acción
 
-        return await this.accionAdminRepository.save(accion);
+        return await this.accionAdminRepository.save(accion); // Guarda la acción en la base de datos y la devuelve
     }
 
     async obtenerAcciones(): Promise<AccionAdmin[]> {
-        return this.accionAdminRepository.find({
-            relations: ['admin', 'usuario_afectado'],
-            order: { fecha: 'DESC' }
+        return this.accionAdminRepository.find({ // Busca todas las acciones
+            relations: ['admin', 'usuario_afectado'], // Carga las relaciones con las entidades Usuario (admin y usuario_afectado)
+            order: { fecha: 'DESC' } // Ordena las acciones por fecha de forma descendente (más recientes primero)
         });
     }
 
     async obtenerAccionesPorAdmin(adminId: number): Promise<AccionAdmin[]> {
-        return this.accionAdminRepository.find({
-            where: { adminId },
-            relations: ['admin', 'usuario_afectado'],
-            order: { fecha: 'DESC' }
+        return this.accionAdminRepository.find({ // Busca las acciones por el ID del administrador
+            where: { adminId }, // Filtra las acciones por el adminId proporcionado
+            relations: ['admin', 'usuario_afectado'], // Carga las relaciones con las entidades Usuario
+            order: { fecha: 'DESC' } // Ordena las acciones por fecha de forma descendente
         });
     }
 
     async obtenerAccionesPorUsuario(usuarioId: number): Promise<AccionAdmin[]> {
-        return this.accionAdminRepository.find({
-            where: { usuario_afectado_id: usuarioId },
-            relations: ['admin', 'usuario_afectado'],
-            order: { fecha: 'DESC' }
+        return this.accionAdminRepository.find({ // Busca las acciones por el ID del usuario afectado
+            where: { usuario_afectado_id: usuarioId }, // Filtra las acciones por el usuario_afectado_id proporcionado
+            relations: ['admin', 'usuario_afectado'], // Carga las relaciones con las entidades Usuario
+            order: { fecha: 'DESC' } // Ordena las acciones por fecha de forma descendente
         });
     }
-} 
+}

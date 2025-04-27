@@ -8,30 +8,30 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { Usuario } from './entities/usuario.entity';
 import { ResultadoCreacion } from './interfaces/resultado-creacion.interface';
 
-@Controller('usuarios')
+@Controller('usuarios') // Define la ruta base del controlador como 'usuarios'
 export class UsuariosController {
-    constructor(private readonly usuariosService: UsuariosService) { }
+    constructor(private readonly usuariosService: UsuariosService) { } // Inyecta el servicio UsuariosService
 
-    @Post('crear-admin')
+    @Post('crear-admin') // Define un endpoint POST en '/usuarios/crear-admin'
     async createAdmin(@Body() createUsuarioDto: CreateUsuarioDto): Promise<Usuario> {
-        return this.usuariosService.create({
+        return this.usuariosService.create({ // Llama al servicio para crear un usuario con el rol 'admin'
             ...createUsuarioDto,
             rol: 'admin'
         });
     }
 
-    @Post()
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('admin')
+    @Post() // Define un endpoint POST en '/usuarios'
+    @UseGuards(JwtAuthGuard, RolesGuard) // Aplica los guardias de autenticación JWT y de roles
+    @Roles('admin') // Requiere que el usuario tenga el rol de 'admin' para acceder a esta ruta
     async create(@Body() createUsuarioDto: CreateUsuarioDto): Promise<Usuario> {
-        return this.usuariosService.create(createUsuarioDto);
+        return this.usuariosService.create(createUsuarioDto); // Llama al servicio para crear un nuevo usuario
     }
 
-    @Post('crear-prueba')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('admin')
+    @Post('crear-prueba') // Define un endpoint POST en '/usuarios/crear-prueba'
+    @UseGuards(JwtAuthGuard, RolesGuard) // Aplica los guardias de autenticación JWT y de roles
+    @Roles('admin') // Requiere que el usuario tenga el rol de 'admin' para acceder a esta ruta
     async crearUsuariosPrueba(): Promise<ResultadoCreacion[]> {
-        const usuarios = [
+        const usuarios = [ // Define un array de usuarios de prueba a crear
             {
                 username: 'usuario_activo',
                 password: 'password123',
@@ -58,50 +58,50 @@ export class UsuariosController {
             }
         ];
 
-        const resultados: ResultadoCreacion[] = [];
+        const resultados: ResultadoCreacion[] = []; // Array para almacenar los resultados de la creación
         for (const usuario of usuarios) {
             try {
-                const creado = await this.usuariosService.create(usuario);
-                resultados.push({
+                const creado = await this.usuariosService.create(usuario); // Intenta crear el usuario
+                resultados.push({ // Agrega un resultado exitoso
                     username: creado.username,
                     estado: creado.estado,
                     rol: creado.rol,
                     mensaje: 'Creado exitosamente'
                 });
             } catch (error) {
-                resultados.push({
+                resultados.push({ // Agrega un resultado de error
                     username: usuario.username,
                     error: error.message
                 });
             }
         }
 
-        return resultados;
+        return resultados; // Retorna los resultados de la creación de usuarios de prueba
     }
 
-    @Get()
-    @UseGuards(JwtAuthGuard)
+    @Get() // Define un endpoint GET en '/usuarios'
+    @UseGuards(JwtAuthGuard) // Aplica el guardia de autenticación JWT
     async findAll(): Promise<Usuario[]> {
-        return this.usuariosService.findAll();
+        return this.usuariosService.findAll(); // Llama al servicio para obtener todos los usuarios
     }
 
-    @Get(':id')
-    @UseGuards(JwtAuthGuard)
+    @Get(':id') // Define un endpoint GET en '/usuarios/:id'
+    @UseGuards(JwtAuthGuard) // Aplica el guardia de autenticación JWT
     async findOne(@Param('id') id: string): Promise<Usuario> {
-        return this.usuariosService.findOne(+id);
+        return this.usuariosService.findOne(+id); // Llama al servicio para obtener un usuario por su ID
     }
 
-    @Patch(':id')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('admin')
+    @Patch(':id') // Define un endpoint PATCH en '/usuarios/:id'
+    @UseGuards(JwtAuthGuard, RolesGuard) // Aplica los guardias de autenticación JWT y de roles
+    @Roles('admin') // Requiere que el usuario tenga el rol de 'admin' para acceder a esta ruta
     async update(@Param('id') id: string, @Body() updateUsuarioDto: UpdateUsuarioDto): Promise<Usuario> {
-        return this.usuariosService.update(+id, updateUsuarioDto);
+        return this.usuariosService.update(+id, updateUsuarioDto); // Llama al servicio para actualizar un usuario por su ID
     }
 
-    @Delete(':id')
-    @UseGuards(JwtAuthGuard, RolesGuard)
-    @Roles('admin')
+    @Delete(':id') // Define un endpoint DELETE en '/usuarios/:id'
+    @UseGuards(JwtAuthGuard, RolesGuard) // Aplica los guardias de autenticación JWT y de roles
+    @Roles('admin') // Requiere que el usuario tenga el rol de 'admin' para acceder a esta ruta
     async remove(@Param('id') id: string): Promise<void> {
-        return this.usuariosService.remove(+id);
+        return this.usuariosService.remove(+id); // Llama al servicio para eliminar un usuario por su ID
     }
 }
