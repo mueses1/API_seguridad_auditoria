@@ -12,27 +12,33 @@ import { TipoAccionAdmin } from './entities/accion-admin.entity';
 
 @Injectable() // Marca la clase como un servicio gestionado por NestJS
 export class AdminService {
+    // Inyecta las dependencias necesarias a través del constructor
     constructor(
-        private readonly eventosSeguridadService: EventosSeguridadService, // Inyecta el servicio de eventos de seguridad
-        private readonly mailerService: MailerService, // Inyecta el servicio de correo electrónico
-        private readonly accionAdminService: AccionAdminService, // Inyecta el servicio de acciones de administrador
-        @InjectRepository(EventoSeguridad) // Inyecta el repositorio de la entidad EventoSeguridad
+        private readonly eventosSeguridadService: EventosSeguridadService, // Servicio para interactuar con los eventos de seguridad
+        private readonly mailerService: MailerService, // Servicio para enviar correos electrónicos
+        private readonly accionAdminService: AccionAdminService, // Servicio para registrar acciones de administrador
+        @InjectRepository(EventoSeguridad) // Inyecta el repositorio para la entidad EventoSeguridad
         private eventoSeguridadRepository: Repository<EventoSeguridad>,
-        @InjectRepository(Usuario) // Inyecta el repositorio de la entidad Usuario
+        @InjectRepository(Usuario) // Inyecta el repositorio para la entidad Usuario
         private usuarioRepository: Repository<Usuario>,
     ) { }
 
+    // Genera un reporte del día con estadísticas de seguridad, inicios de sesión, errores, etc.
     async generarReporteDia(): Promise<ReporteDiaDto> {
+        // Obtiene todos los eventos de seguridad del día actual
         const eventos = await this.eventosSeguridadService.obtenerEventosDelDia();
 
-        // Obtener los eventos de inicio de sesión exitosos
+        // Obtiene los eventos de inicio de sesión exitosos del día
         const loginExitosos = await this.eventosSeguridadService.obtenerLoginExitososDelDia();
 
+        // Obtiene los intentos de inicio de sesión fallidos del día
         const loginFallidos = await this.obtenerLoginFallidos();
+        // Obtiene los intentos fallidos de verificación de código de recuperación del día
         const codigosFallidos = await this.obtenerCodigosFallidos();
+        // Obtiene los usuarios que han tenido múltiples errores de inicio de sesión o verificación de código
         const usuariosConMultiplesErrores = await this.obtenerUsuariosConMultiplesErrores();
 
-        // Agrupar eventos por IP para detectar patrones sospechosos
+        // Agrupa los eventos por dirección IP para detectar patrones sospechosos
         const eventosIp = new Map<string, { intentos: number, userAgents: Set<string> }>();
         eventos.forEach(evento => {
             const datosIp = eventosIp.get(evento.ip) || { intentos: 0, userAgents: new Set<string>() };
@@ -41,6 +47,7 @@ export class AdminService {
             eventosIp.set(evento.ip, datosIp);
         });
 
+        // Identifica las IPs que muestran un número inusualmente alto de intentos o una variedad de agentes de usuario
         const ipsSospechosas = Array.from(eventosIp.entries())
             .filter(([_, datos]) => datos.intentos > 10 || datos.userAgents.size > 3)
             .map(([ip, datos]) => ({
@@ -49,6 +56,7 @@ export class AdminService {
                 userAgents: Array.from(datos.userAgents)
             }));
 
+        // Retorna un objeto con las estadísticas y los detalles del reporte
         return {
             estadisticas: {
                 totalEventos: eventos.length,
@@ -72,18 +80,21 @@ export class AdminService {
         };
     }
 
+    // Obtiene una lista de usuarios con sus respectivos intentos fallidos de inicio de sesión del día
     async obtenerLoginFallidos(): Promise<LoginFailedUser[]> {
+        // Busca todos los eventos de inicio de sesión fallidos del día actual
         const eventos = await this.eventoSeguridadRepository.find({
             where: {
                 tipo: TipoEvento.LOGIN_FALLIDO,
                 fecha: Between(
-                    new Date(new Date().setHours(0, 0, 0, 0)),
-                    new Date(new Date().setHours(23, 59, 59, 999))
+                    new Date(new Date().setHours(0, 0, 0, 0)), // Inicio del día
+                    new Date(new Date().setHours(23, 59, 59, 999)) // Fin del día
                 ),
             },
-            relations: ['usuario'],
+            relations: ['usuario'], // Incluye la información del usuario asociado al evento
         });
 
+        // Agrupa los intentos fallidos por usuario
         const intentosPorUsuario = new Map<number, { intentos: number; usuario: Usuario }>();
         eventos.forEach(evento => {
             if (!intentosPorUsuario.has(evento.usuario_id)) {
@@ -95,6 +106,7 @@ export class AdminService {
             }
         });
 
+        // Formatea los resultados para la respuesta
         return Array.from(intentosPorUsuario.entries()).map(([usuario_id, datos]) => ({
             usuario_id,
             username: datos.usuario?.username || 'Usuario Desconocido',
@@ -103,18 +115,21 @@ export class AdminService {
         }));
     }
 
+    // Obtiene una lista de intentos fallidos de verificación de código de recuperación del día
     async obtenerCodigosFallidos(): Promise<FailedRecoveryCode[]> {
+        // Busca todos los eventos de código de verificación fallido del día actual
         const eventos = await this.eventoSeguridadRepository.find({
             where: {
                 tipo: TipoEvento.CODIGO_VERIFICACION_FALLIDO,
                 fecha: Between(
-                    new Date(new Date().setHours(0, 0, 0, 0)),
-                    new Date(new Date().setHours(23, 59, 59, 999))
+                    new Date(new Date().setHours(0, 0, 0, 0)), // Inicio del día
+                    new Date(new Date().setHours(23, 59, 59, 999)) // Fin del día
                 ),
             },
-            relations: ['usuario'],
+            relations: ['usuario'], // Incluye la información del usuario asociado al evento
         });
 
+        // Formatea los resultados para la respuesta
         return eventos.map(evento => ({
             usuario_id: evento.usuario_id,
             username: evento.usuario?.username || 'Usuario Desconocido',
@@ -123,18 +138,21 @@ export class AdminService {
         }));
     }
 
+    // Obtiene una lista de usuarios que han tenido múltiples intentos fallidos de inicio de sesión o verificación de código durante el día
     async obtenerUsuariosConMultiplesErrores(): Promise<MultipleFailedUser[]> {
+        // Busca todos los eventos de inicio de sesión fallido o código de verificación fallido del día actual
         const eventos = await this.eventoSeguridadRepository.find({
             where: {
                 tipo: In([TipoEvento.LOGIN_FALLIDO, TipoEvento.CODIGO_VERIFICACION_FALLIDO]),
                 fecha: Between(
-                    new Date(new Date().setHours(0, 0, 0, 0)),
-                    new Date(new Date().setHours(23, 59, 59, 999))
+                    new Date(new Date().setHours(0, 0, 0, 0)), // Inicio del día
+                    new Date(new Date().setHours(23, 59, 59, 999)) // Fin del día
                 ),
             },
-            relations: ['usuario'],
+            relations: ['usuario'], // Incluye la información del usuario asociado al evento
         });
 
+        // Cuenta el número de errores por usuario
         const erroresPorUsuario = new Map<number, { errores: number; usuario: Usuario }>();
         eventos.forEach(evento => {
             if (!erroresPorUsuario.has(evento.usuario_id)) {
@@ -146,6 +164,7 @@ export class AdminService {
             }
         });
 
+        // Filtra los usuarios que tienen más de 3 errores y formatea los resultados
         return Array.from(erroresPorUsuario.entries())
             .filter(([_, datos]) => datos.errores > 3)
             .map(([usuario_id, datos]) => ({
@@ -156,8 +175,11 @@ export class AdminService {
             }));
     }
 
+    // Envía un reporte de seguridad por correo electrónico al administrador
     async enviarReportePorCorreo(adminId: number): Promise<void> {
+        // Genera el reporte del día
         const reporte = await this.generarReporteDia();
+        // Formatea la fecha para el asunto del correo y el contenido del reporte
         const fechaFormateada = reporte.fecha.toLocaleDateString('es-ES', {
             weekday: 'long',
             year: 'numeric',
@@ -167,13 +189,13 @@ export class AdminService {
             minute: '2-digit'
         });
 
+        // Define el contenido HTML del correo electrónico del reporte
         const htmlContent = `
             <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
                 <h1 style="color: #2c3e50; text-align: center; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
                     Reporte de Seguridad - ${fechaFormateada}
                 </h1>
 
-                <!-- Resumen Ejecutivo -->
                 <div style="margin: 20px 0; padding: 15px; background-color: #ecf0f1; border-radius: 5px;">
                     <h2 style="color: #2c3e50;">Resumen Ejecutivo</h2>
                     <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px;">
@@ -198,81 +220,77 @@ export class AdminService {
                     </div>
                 </div>
                 
-                <!-- Inicios de Sesión Exitosos -->
                 <div style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
                     <h2 style="color: #27ae60;">Inicios de Sesión Exitosos</h2>
                     ${reporte.loginExitosos.length === 0 ?
-                '<p style="color: #666;">No hubo inicios de sesión exitosos en este período.</p>' :
-                `<ul style="list-style-type: none; padding: 0;">
-                            ${reporte.loginExitosos.map(u => `
-                                <li style="margin: 10px 0; padding: 10px; background-color: #e8f5e9; border-radius: 4px;">
-                                    <strong>Usuario:</strong> ${u.username}<br>
-                                    <strong>Hora:</strong> ${new Date(u.timestamp).toLocaleTimeString('es-ES')}<br>
-                                    <strong>IP:</strong> ${u.ip}<br>
-                                    <strong>Navegador:</strong> ${u.userAgent}
-                                </li>
-                            `).join('')}
-                        </ul>`
-            }
+                        '<p style="color: #666;">No hubo inicios de sesión exitosos en este período.</p>' :
+                        `<ul style="list-style-type: none; padding: 0;">
+                                ${reporte.loginExitosos.map(u => `
+                                    <li style="margin: 10px 0; padding: 10px; background-color: #e8f5e9; border-radius: 4px;">
+                                        <strong>Usuario:</strong> ${u.username}<br>
+                                        <strong>Hora:</strong> ${new Date(u.timestamp).toLocaleTimeString('es-ES')}<br>
+                                        <strong>IP:</strong> ${u.ip}<br>
+                                        <strong>Navegador:</strong> ${u.userAgent}
+                                    </li>
+                                `).join('')}
+                            </ul>`
+                    }
                 </div>
 
-                <!-- Intentos Fallidos -->
                 <div style="margin: 20px 0; padding: 15px; background-color: #fff3e0; border-radius: 5px;">
                     <h2 style="color: #f39c12;">Intentos de Inicio de Sesión Fallidos</h2>
                     ${reporte.loginFallidos.length === 0 ?
-                '<p style="color: #666;">No se registraron intentos fallidos de inicio de sesión.</p>' :
-                `<ul style="list-style-type: none; padding: 0;">
-                            ${reporte.loginFallidos.map(u => `
-                                <li style="margin: 10px 0; padding: 10px; background-color: #fff7e6; border-radius: 4px;">
-                                    <strong>Usuario:</strong> ${u.username}<br>
-                                    <strong>ID:</strong> ${u.usuario_id}<br>
-                                    <strong>Intentos Fallidos:</strong> ${u.intentos}<br>
-                                    <strong>Estado:</strong> ${u.estado ? 'Activo' : '<span style="color: #e74c3c;">Bloqueado</span>'}
-                                </li>
-                            `).join('')}
-                        </ul>`
-            }
+                        '<p style="color: #666;">No se registraron intentos fallidos de inicio de sesión.</p>' :
+                        `<ul style="list-style-type: none; padding: 0;">
+                                ${reporte.loginFallidos.map(u => `
+                                    <li style="margin: 10px 0; padding: 10px; background-color: #fff7e6; border-radius: 4px;">
+                                        <strong>Usuario:</strong> ${u.username}<br>
+                                        <strong>ID:</strong> ${u.usuario_id}<br>
+                                        <strong>Intentos Fallidos:</strong> ${u.intentos}<br>
+                                        <strong>Estado:</strong> ${u.estado ? 'Activo' : '<span style="color: #e74c3c;">Bloqueado</span>'}
+                                    </li>
+                                `).join('')}
+                            </ul>`
+                    }
                 </div>
 
-                <!-- Códigos de Recuperación Fallidos -->
                 <div style="margin: 20px 0; padding: 15px; background-color: #ffebee; border-radius: 5px;">
                     <h2 style="color: #c0392b;">Códigos de Recuperación Fallidos</h2>
                     ${reporte.codigosFallidos.length === 0 ?
-                '<p style="color: #666;">No se registraron intentos fallidos de códigos de recuperación.</p>' :
-                `<ul style="list-style-type: none; padding: 0;">
-                            ${reporte.codigosFallidos.map(c => `
-                                <li style="margin: 10px 0; padding: 10px; background-color: #ffeaea; border-radius: 4px;">
-                                    <strong>Usuario:</strong> ${c.username}<br>
-                                    <strong>ID:</strong> ${c.usuario_id}<br>
-                                    <strong>Fecha y Hora:</strong> ${c.fecha.toLocaleString('es-ES')}<br>
-                                    <strong>Estado:</strong> ${c.estado ? 'Activo' : '<span style="color: #e74c3c;">Bloqueado</span>'}
-                                </li>
-                            `).join('')}
-                        </ul>`
-            }
+                        '<p style="color: #666;">No se registraron intentos fallidos de códigos de recuperación.</p>' :
+                        `<ul style="list-style-type: none; padding: 0;">
+                                ${reporte.codigosFallidos.map(c => `
+                                    <li style="margin: 10px 0; padding: 10px; background-color: #ffeaea; border-radius: 4px;">
+                                        <strong>Usuario:</strong> ${c.username}<br>
+                                        <strong>ID:</strong> ${c.usuario_id}<br>
+                                        <strong>Fecha y Hora:</strong> ${c.fecha.toLocaleString('es-ES')}<br>
+                                        <strong>Estado:</strong> ${c.estado ? 'Activo' : '<span style="color: #e74c3c;">Bloqueado</span>'}
+                                    </li>
+                                `).join('')}
+                            </ul>`
+                    }
                 </div>
 
-                <!-- Usuarios con Múltiples Errores -->
                 <div style="margin: 20px 0; padding: 15px; background-color: #e8eaf6; border-radius: 5px;">
                     <h2 style="color: #3f51b5;">Usuarios con Múltiples Errores</h2>
                     ${reporte.usuariosConMultiplesErrores.length === 0 ?
-                '<p style="color: #666;">No se registraron usuarios con múltiples errores.</p>' :
-                `<ul style="list-style-type: none; padding: 0;">
-                            ${reporte.usuariosConMultiplesErrores.map(u => `
-                                <li style="margin: 10px 0; padding: 10px; background-color: #e3f2fd; border-radius: 4px;">
-                                    <strong>Usuario:</strong> ${u.username}<br>
-                                    <strong>ID:</strong> ${u.usuario_id}<br>
-                                    <strong>Total de Errores:</strong> ${u.errores}<br>
-                                    <strong>Estado:</strong> ${u.estado ? 'Activo' : '<span style="color: #e74c3c;">Bloqueado</span>'}
-                                </li>
-                            `).join('')}
-                        </ul>`
-            }
+                        '<p style="color: #666;">No se registraron usuarios con múltiples errores.</p>' :
+                        `<ul style="list-style-type: none; padding: 0;">
+                                ${reporte.usuariosConMultiplesErrores.map(u => `
+                                    <li style="margin: 10px 0; padding: 10px; background-color: #e3f2fd; border-radius: 4px;">
+                                        <strong>Usuario:</strong> ${u.username}<br>
+                                        <strong>ID:</strong> ${u.usuario_id}<br>
+                                        <strong>Total de Errores:</strong> ${u.errores}<br>
+                                        <strong>Estado:</strong> ${u.estado ? 'Activo' : '<span style="color: #e74c3c;">Bloqueado</span>'}
+                                    </li>
+                                `).join('')}
+                            </ul>`
+                    }
                 </div>
 
-                <!-- IPs Sospechosas -->
                 ${reporte.ipsSospechosas.length > 0 ? `
-                <div style="margin: 20px 0; padding: 15px; background-color: #fce4ec; border-radius: 5px;">
+                <div style="margin: 20px 0; padding: 15px;
+                background-color: #fce4ec; border-radius: 5px;">
                     <h2 style="color: #880e4f;">Actividad Sospechosa por IP</h2>
                     <ul style="list-style-type: none; padding: 0;">
                         ${reporte.ipsSospechosas.map(ip => `
@@ -298,30 +316,36 @@ export class AdminService {
             </div>
         `;
 
+        // Envía el correo electrónico con el reporte de seguridad
         await this.mailerService.sendMail({
-            to: 'admin@mail.com',
-            subject: `Reporte de Seguridad - ${fechaFormateada}`,
-            html: htmlContent,
+            to: 'admin@mail.com', // Dirección de correo del administrador
+            subject: `Reporte de Seguridad - ${fechaFormateada}`, // Asunto del correo con la fecha del reporte
+            html: htmlContent, // Contenido HTML del reporte
         });
 
+        // Registra la acción del administrador de enviar el reporte
         await this.accionAdminService.registrarAccion(
             adminId,
             TipoAccionAdmin.ENVIAR_REPORTE,
-            null,
-            'Reporte de seguridad enviado por correo'
+            null, // No hay un usuario específico asociado a esta acción
+            'Reporte de seguridad enviado por correo' // Descripción de la acción
         );
     }
 
+    // Obtiene una lista de todos los usuarios junto con sus últimos eventos de seguridad
     async monitorearUsuarios(): Promise<UsuarioConEventos[]> {
-        const usuarios = await this.usuarioRepository.find(); // Obtiene todos los usuarios
+        // Obtiene todos los usuarios de la base de datos
+        const usuarios = await this.usuarioRepository.find();
         const resultado: UsuarioConEventos[] = [];
 
+        // Itera sobre cada usuario para obtener sus eventos de seguridad
         for (const usuario of usuarios) {
-            const eventos = await this.eventosSeguridadService.obtenerEventosPorUsuario(usuario.id); // Obtiene los eventos de seguridad de cada usuario
+            // Obtiene los últimos eventos de seguridad del usuario (por ejemplo, los últimos 10)
+            const eventos = await this.eventosSeguridadService.obtenerEventosPorUsuario(usuario.id);
             resultado.push({
                 id: usuario.id,
                 username: usuario.username,
-                bloqueado: !usuario.estado, // Indica si el usuario está bloqueado (estado false)
+                bloqueado: !usuario.estado, // Indica si el usuario está bloqueado
                 eventos: eventos,
             });
         }
@@ -329,23 +353,29 @@ export class AdminService {
         return resultado;
     }
 
+    // Bloquea a un usuario específico
     async bloquearUsuario(id: number, adminId: number): Promise<void> {
+        // Actualiza el estado del usuario a bloqueado (false)
         await this.usuarioRepository.update(id, { estado: false });
+        // Registra la acción del administrador de bloquear al usuario
         await this.accionAdminService.registrarAccion(
             adminId,
             TipoAccionAdmin.BLOQUEAR_USUARIO,
-            id,
-            `Usuario ID: ${id} ha sido bloqueado por el administrador`
+            id, // ID del usuario bloqueado
+            `Usuario ID: ${id} ha sido bloqueado por el administrador` // Descripción de la acción
         );
     }
 
+    // Desbloquea a un usuario específico
     async desbloquearUsuario(id: number, adminId: number): Promise<void> {
+        // Actualiza el estado del usuario a activo (true)
         await this.usuarioRepository.update(id, { estado: true });
+        // Registra la acción del administrador de desbloquear al usuario
         await this.accionAdminService.registrarAccion(
             adminId,
             TipoAccionAdmin.DESBLOQUEAR_USUARIO,
-            id,
-            `Usuario ID: ${id} ha sido desbloqueado por el administrador`
+            id, // ID del usuario desbloqueado
+            `Usuario ID: ${id} ha sido desbloqueado por el administrador` // Descripción de la acción
         );
     }
 }
