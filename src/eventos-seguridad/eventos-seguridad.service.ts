@@ -3,102 +3,116 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between } from 'typeorm';
 import { EventoSeguridad, TipoEvento } from './entities/eventos-seguridad.entity';
 import { CreateEventoSeguridadDto } from './dto/create-evento-seguridad.dto';
-import { Usuario } from '../usuarios/entities/usuario.entity';
 
 @Injectable() // Marca la clase como un servicio gestionado por NestJS
 export class EventosSeguridadService {
+    // Inyecta los repositorios necesarios para interactuar con las entidades EventoSeguridad y Usuario
     constructor(
-        @InjectRepository(EventoSeguridad) // Inyecta el repositorio de la entidad EventoSeguridad
+        @InjectRepository(EventoSeguridad)
         private eventoSeguridadRepository: Repository<EventoSeguridad>,
-        @InjectRepository(Usuario) // Inyecta el repositorio de la entidad Usuario
-        private usuarioRepository: Repository<Usuario>,
     ) { }
 
+    // Crea un nuevo evento de seguridad en la base de datos
     async create(createEventoSeguridadDto: CreateEventoSeguridadDto): Promise<EventoSeguridad> {
-        const evento = this.eventoSeguridadRepository.create(createEventoSeguridadDto); // Crea una nueva instancia de EventoSeguridad
-        return await this.eventoSeguridadRepository.save(evento); // Guarda el evento en la base de datos y lo devuelve
+        // Crea una nueva instancia de la entidad EventoSeguridad con los datos del DTO
+        const evento = this.eventoSeguridadRepository.create(createEventoSeguridadDto);
+        // Guarda el evento en la base de datos y devuelve la entidad guardada
+        return await this.eventoSeguridadRepository.save(evento);
     }
 
+    // Registra un evento de inicio de sesión fallido
     async registrarLoginFallido(usuario_id: number, ip: string, user_agent: string): Promise<EventoSeguridad> {
-        return this.create({ // Crea y guarda un evento de login fallido
-            tipo: TipoEvento.LOGIN_FALLIDO,
-            usuario_id,
-            ip,
-            user_agent,
-            descripcion: `Intento de login fallido para usuario ID: ${usuario_id}`,
+        // Llama al método create para guardar un nuevo evento con los detalles del fallo de inicio de sesión
+        return this.create({
+            tipo: TipoEvento.LOGIN_FALLIDO, // Define el tipo de evento como inicio de sesión fallido
+            usuario_id, // ID del usuario que intentó iniciar sesión
+            ip, // Dirección IP desde la que se intentó el inicio de sesión
+            user_agent, // Agente de usuario del navegador o aplicación
+            descripcion: `Intento de login fallido para usuario ID: ${usuario_id}`, // Descripción del evento
         });
     }
 
+    // Registra un evento de múltiples intentos fallidos de inicio de sesión
     async registrarIntentoMultiple(usuario_id: number, ip: string, user_agent: string, intentos: number): Promise<EventoSeguridad> {
-        return this.create({ // Crea y guarda un evento de múltiples intentos fallidos
-            tipo: TipoEvento.INTENTOS_MULTIPLES,
-            usuario_id,
-            ip,
-            user_agent,
-            descripcion: `Usuario ID: ${usuario_id} ha realizado ${intentos} intentos fallidos de login`,
+        // Llama al método create para guardar un nuevo evento indicando múltiples intentos fallidos
+        return this.create({
+            tipo: TipoEvento.INTENTOS_MULTIPLES, // Define el tipo de evento como múltiples intentos fallidos
+            usuario_id, // ID del usuario con múltiples intentos fallidos
+            ip, // Dirección IP de los intentos
+            user_agent, // Agente de usuario de los intentos
+            descripcion: `Usuario ID: ${usuario_id} ha realizado ${intentos} intentos fallidos de login`, // Descripción del evento con el número de intentos
         });
     }
 
+    // Registra un evento de bloqueo de usuario debido a múltiples intentos fallidos
     async registrarUsuarioBloqueado(usuario_id: number, ip: string, user_agent: string): Promise<EventoSeguridad> {
-        return this.create({ // Crea y guarda un evento de usuario bloqueado
-            tipo: TipoEvento.USUARIO_BLOQUEADO,
-            usuario_id,
-            ip,
-            user_agent,
-            descripcion: `Usuario ID: ${usuario_id} ha sido bloqueado por múltiples intentos fallidos`,
+        // Llama al método create para guardar un nuevo evento de usuario bloqueado
+        return this.create({
+            tipo: TipoEvento.USUARIO_BLOQUEADO, // Define el tipo de evento como usuario bloqueado
+            usuario_id, // ID del usuario bloqueado
+            ip, // Dirección IP al momento del bloqueo
+            user_agent, // Agente de usuario al momento del bloqueo
+            descripcion: `Usuario ID: ${usuario_id} ha sido bloqueado por múltiples intentos fallidos`, // Descripción del evento de bloqueo
         });
     }
 
+    // Registra un evento de solicitud de restablecimiento de contraseña
     async registrarResetPassword(usuario_id: number, ip: string, user_agent: string): Promise<EventoSeguridad> {
-        return this.create({ // Crea y guarda un evento de solicitud de restablecimiento de contraseña
-            tipo: TipoEvento.RESET_PASSWORD,
-            usuario_id,
-            ip,
-            user_agent,
-            descripcion: `Solicitud de recuperación de contraseña para usuario ID: ${usuario_id}`,
+        // Llama al método create para guardar un nuevo evento de solicitud de restablecimiento de contraseña
+        return this.create({
+            tipo: TipoEvento.RESET_PASSWORD, // Define el tipo de evento como solicitud de restablecimiento de contraseña
+            usuario_id, // ID del usuario que solicitó el restablecimiento
+            ip, // Dirección IP de la solicitud
+            user_agent, // Agente de usuario de la solicitud
+            descripcion: `Solicitud de recuperación de contraseña para usuario ID: ${usuario_id}`, // Descripción de la solicitud
         });
     }
 
+    // Registra un evento de intento fallido de verificación de código (por ejemplo, al restablecer la contraseña)
     async registrarCodigoVerificacionFallido(usuario_id: number, ip: string, user_agent: string): Promise<EventoSeguridad> {
-        return this.create({ // Crea y guarda un evento de código de verificación fallido
-            tipo: TipoEvento.CODIGO_VERIFICACION_FALLIDO,
-            usuario_id,
-            ip,
-            user_agent,
-            descripcion: `Código de verificación usado incorrectamente para usuario ID: ${usuario_id}`,
+        // Llama al método create para guardar un nuevo evento de código de verificación fallido
+        return this.create({
+            tipo: TipoEvento.CODIGO_VERIFICACION_FALLIDO, // Define el tipo de evento como código de verificación fallido
+            usuario_id, // ID del usuario que intentó la verificación
+            ip, // Dirección IP del intento
+            user_agent, // Agente de usuario del intento
+            descripcion: `Código de verificación usado incorrectamente para usuario ID: ${usuario_id}`, // Descripción del evento
         });
     }
 
+    // Obtiene todos los eventos de seguridad registrados en el día actual
     async obtenerEventosDelDia(): Promise<EventoSeguridad[]> {
         const hoy = new Date(); // Obtiene la fecha actual
-        const inicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()); // Define el inicio del día (00:00:00)
-        const fin = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 1); // Define el final del día (23:59:59)
+        const inicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate()); // Define la fecha de inicio del día (a las 00:00:00)
+        const fin = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 1); // Define la fecha de fin del día (al inicio del día siguiente, es decir, hasta las 23:59:59 del día actual)
 
-        return this.eventoSeguridadRepository.find({ // Busca eventos dentro del rango de fecha del día actual
+        // Busca eventos de seguridad cuya fecha esté dentro del rango del día actual
+        return this.eventoSeguridadRepository.find({
             where: {
-                fecha: Between(inicio, fin),
+                fecha: Between(inicio, fin), // Utiliza Between de TypeORM para filtrar por rango de fechas
             },
-            relations: ['usuario'], // Carga la relación con la entidad Usuario
+            relations: ['usuario'], // Carga la relación con la entidad Usuario para acceder a la información del usuario asociado
         });
     }
 
+    // Obtiene los últimos 10 eventos de seguridad para un usuario específico
     async obtenerEventosPorUsuario(usuario_id: number): Promise<EventoSeguridad[]> {
-        return this.eventoSeguridadRepository.find({ // Busca los últimos 10 eventos de seguridad para un usuario específico
-            where: { usuario_id },
-            order: { fecha: 'DESC' }, // Ordena los eventos por fecha descendente (más recientes primero)
-            take: 10, // Limita el número de resultados a 10
+        // Busca eventos de seguridad para un usuario específico
+        return this.eventoSeguridadRepository.find({
+            where: { usuario_id }, // Filtra los eventos por el ID del usuario
+            order: { fecha: 'DESC' }, // Ordena los eventos por fecha de forma descendente (los más recientes primero)
+            take: 10, // Limita el número de resultados a los 10 eventos más recientes
         });
     }
+
+    // Cuenta el número de intentos fallidos de inicio de sesión para un usuario dentro de un período de tiempo especificado
     async contarIntentosFallidosRecientes(usuario_id: number, desde: Date): Promise<number> {
-        // Utiliza el repositorio de eventos de seguridad para contar los registros de intentos fallidos de login
+        // Cuenta los registros de eventos de seguridad que cumplen con los criterios especificados
         return await this.eventoSeguridadRepository.count({
             where: {
-                // Filtra por el ID del usuario
-                usuario_id, 
-                // Filtra solo eventos de tipo 'LOGIN_FALLIDO'
-                tipo: TipoEvento.LOGIN_FALLIDO,
-                // Filtra los eventos cuya fecha esté dentro del rango especificado
-                fecha: Between(desde, new Date()), 
+                usuario_id, // Filtra por el ID del usuario
+                tipo: TipoEvento.LOGIN_FALLIDO, // Filtra solo los eventos de tipo inicio de sesión fallido
+                fecha: Between(desde, new Date()), // Filtra los eventos cuya fecha esté entre la fecha 'desde' y la fecha actual
             },
         });
     }

@@ -5,58 +5,75 @@ import { EventosSeguridadService } from '../eventos-seguridad/eventos-seguridad.
 import { MailerService } from '@nestjs-modules/mailer';
 import * as bcrypt from 'bcrypt';
 
-@Injectable() // Marca la clase como un servicio 
+@Injectable() // Marca la clase como un servicio gestionado por NestJS
 export class AuthService {
+    // Inyecta los servicios necesarios a través del constructor
     constructor(
-        private usuariosService: UsuariosService, // Inyecta el servicio de usuarios
-        private jwtService: JwtService, // Inyecta el servicio JWT para la generación de tokens
-        private eventosSeguridadService: EventosSeguridadService, // Inyecta el servicio de eventos de seguridad para registrar acciones
-        private mailerService: MailerService, // Inyecta el servicio de correo electrónico
+        private usuariosService: UsuariosService, // Servicio para interactuar con la entidad Usuario
+        private jwtService: JwtService, // Servicio para la generación y verificación de tokens JWT
+        private eventosSeguridadService: EventosSeguridadService, // Servicio para registrar eventos de seguridad
+        private mailerService: MailerService, // Servicio para el envío de correos electrónicos
     ) { }
 
+    // Valida las credenciales de un usuario para el inicio de sesión
     async validateUser(username: string, password: string, ip: string, userAgent: string): Promise<any> {
-        const usuario = await this.usuariosService.findByUsername(username); // Busca al usuario por su nombre de usuario
+        // Busca al usuario por su nombre de usuario
+        const usuario = await this.usuariosService.findByUsername(username);
 
-        if (!usuario) { // Verifica si el usuario existe
-            throw new UnauthorizedException('Credenciales inválidas'); // Lanza una excepción si el usuario no existe
+        // Si el usuario no existe, lanza una excepción de no autorizado
+        if (!usuario) {
+            throw new UnauthorizedException('Credenciales inválidas');
         }
 
-        if (!usuario.estado) { // Verifica si el usuario está bloqueado
-            await this.eventosSeguridadService.registrarUsuarioBloqueado(usuario.id, ip, userAgent); // Registra el evento de usuario bloqueado
-            throw new UnauthorizedException('Usuario bloqueado'); // Lanza una excepción si el usuario está bloqueado
+        // Verifica si el usuario está bloqueado (estado = false)
+        if (!usuario.estado) {
+            // Registra el evento de usuario bloqueado
+            await this.eventosSeguridadService.registrarUsuarioBloqueado(usuario.id, ip, userAgent);
+            throw new UnauthorizedException('Usuario bloqueado');
         }
 
-        const isPasswordValid = await bcrypt.compare(password, usuario.password); // Compara la contraseña proporcionada con la contraseña hasheada
+        // Compara la contraseña proporcionada con la contraseña hasheada almacenada
+        const isPasswordValid = await bcrypt.compare(password, usuario.password);
 
-        if (!isPasswordValid) { // Si la contraseña no es válida
-            await this.eventosSeguridadService.registrarLoginFallido(usuario.id, ip, userAgent); // Registra el evento de login fallido
+        // Si la contraseña no es válida
+        if (!isPasswordValid) {
+            // Registra el evento de intento de inicio de sesión fallido
+            await this.eventosSeguridadService.registrarLoginFallido(usuario.id, ip, userAgent);
 
-            const ultimasHoras = new Date(); // Obtiene la fecha y hora actual
-            ultimasHoras.setHours(ultimasHoras.getHours() - 1); // Resta una hora para verificar intentos recientes
+            // Obtiene la fecha y hora de hace una hora para verificar intentos recientes
+            const ultimasHoras = new Date();
+            ultimasHoras.setHours(ultimasHoras.getHours() - 1);
 
-            // Llama a una función (a implementar) para contar los intentos fallidos recientes del usuario
+            // Cuenta los intentos fallidos recientes del usuario
             const intentosFallidos = await this.eventosSeguridadService.contarIntentosFallidosRecientes(usuario.id, ultimasHoras);
-            if (intentosFallidos >= 5) { // Si el número de intentos fallidos recientes es igual o mayor a 5
-                await this.usuariosService.actualizarEstado(usuario.id, false); // Bloquea al usuario
-                await this.eventosSeguridadService.registrarIntentoMultiple(usuario.id, ip, userAgent, intentosFallidos); // Registra el evento de múltiples intentos fallidos
-                await this.eventosSeguridadService.registrarUsuarioBloqueado(usuario.id, ip, userAgent); // Registra el evento de usuario bloqueado
-                throw new UnauthorizedException('Usuario bloqueado por múltiples intentos fallidos'); // Lanza una excepción informando el bloqueo
+            // Si el número de intentos fallidos recientes es igual o mayor a 5
+            if (intentosFallidos >= 5) {
+                // Bloquea al usuario actualizando su estado a false
+                await this.usuariosService.actualizarEstado(usuario.id, false);
+                // Registra el evento de múltiples intentos fallidos
+                await this.eventosSeguridadService.registrarIntentoMultiple(usuario.id, ip, userAgent, intentosFallidos);
+                // Registra el evento de usuario bloqueado (nuevamente para consistencia)
+                await this.eventosSeguridadService.registrarUsuarioBloqueado(usuario.id, ip, userAgent);
+                throw new UnauthorizedException('Usuario bloqueado por múltiples intentos fallidos');
             }
 
-            throw new UnauthorizedException('Credenciales inválidas'); // Lanza una excepción si las credenciales son inválidas
+            throw new UnauthorizedException('Credenciales inválidas');
         }
 
-        const { password: _, ...result } = usuario; // Excluye la contraseña del objeto de usuario antes de retornarlo
+        // Excluye la contraseña del objeto de usuario antes de retornarlo
+        const { password: _, ...result } = usuario;
         return result; // Retorna la información del usuario (sin la contraseña)
     }
 
+    // Genera un token JWT para un usuario autenticado
     async login(user: any, ip: string, userAgent: string) {
-        const payload = { username: user.username, sub: user.id, rol: user.rol }; // Define la carga útil para el token JWT
+        // Define la carga útil (payload) que se incluirá en el token JWT
+        const payload = { username: user.username, sub: user.id, rol: user.rol };
 
-        // Aquí se podría registrar un evento de login exitoso (pendiente de implementación en el servicio de eventos)
+        // Aquí se podría registrar un evento de inicio de sesión exitoso
 
         return {
-            access_token: this.jwtService.sign(payload), // Genera y retorna el token JWT
+            access_token: this.jwtService.sign(payload), // Firma la carga útil y genera el token JWT
             user: { // Retorna información del usuario junto con el token
                 id: user.id,
                 username: user.username,
@@ -65,51 +82,83 @@ export class AuthService {
         };
     }
 
+    // Inicia el proceso de recuperación de contraseña enviando un correo electrónico con un código
     async solicitarRecuperacionPassword(username: string, ip: string, userAgent: string) {
-        const usuario = await this.usuariosService.findByUsername(username); // Busca al usuario por su nombre de usuario
+        // Busca al usuario por su nombre de usuario
+        const usuario = await this.usuariosService.findByUsername(username);
 
+        // Si el usuario no existe, retorna un mensaje genérico por seguridad
         if (!usuario) {
-            return { mensaje: 'Si el usuario existe, se ha enviado un correo de recuperación' }; // Mensaje genérico por seguridad
+            return { mensaje: 'Si el usuario existe, se ha enviado un correo de recuperación' };
         }
 
-        await this.eventosSeguridadService.registrarResetPassword(usuario.id, ip, userAgent); // Registra el evento de solicitud de restablecimiento de contraseña
+        // Registra el evento de solicitud de restablecimiento de contraseña
+        await this.eventosSeguridadService.registrarResetPassword(usuario.id, ip, userAgent);
 
-        const codigo = Math.floor(100000 + Math.random() * 900000).toString(); // Genera un código de recuperación aleatorio de 6 dígitos
+        // Genera un código de recuperación aleatorio de 6 dígitos
+        const codigo = Math.floor(100000 + Math.random() * 900000).toString();
+        // Define la fecha de expiración del código (1 hora desde ahora)
+        const codigoExpiracion = new Date();
+        codigoExpiracion.setHours(codigoExpiracion.getHours() + 1);
+
+        // Guarda el código de recuperación y su fecha de expiración en la base de datos del usuario
+        await this.usuariosService.actualizarCodigoRecuperacion(usuario.id, codigo, codigoExpiracion);
 
         try {
-            await this.mailerService.sendMail({ // Envía un correo electrónico con el código de recuperación
+            // Envía un correo electrónico con el código de recuperación
+            await this.mailerService.sendMail({
                 to: 'muesesnicolas58@gmail.com', // Dirección de correo del destinatario (hardcoded para ejemplo)
                 subject: 'Recuperación de Contraseña',
                 html: `
                     <h1>Recuperación de Contraseña</h1>
                     <p>Se ha solicitado la recuperación de contraseña para tu cuenta.</p>
                     <p>Tu código de verificación es: <strong>${codigo}</strong></p>
+                    <p>Este código expirará en 1 hora.</p>
                     <p>Si no solicitaste este cambio, ignora este correo.</p>
                 `,
             });
         } catch (error) {
             console.error('Error al enviar el correo:', error);
-            // No relanzar el error, devolver mensaje genérico por seguridad
+            // Considera registrar este error en un sistema de logs
         }
 
-        return { mensaje: 'Si el usuario existe, se ha enviado un correo de recuperación' }; // Mensaje genérico por seguridad
+        return { mensaje: 'Si el usuario existe, se ha enviado un correo de recuperación' };
     }
 
-    async verificarCodigoRecuperacion(username: string, codigo: string, ip: string, userAgent: string) {
-        const usuario = await this.usuariosService.findByUsername(username); // Busca al usuario por su nombre de usuario
+    // Verifica si el código de recuperación proporcionado por el usuario es válido
+    async verificarCodigoRecuperacion(username: string, _codigo: string, ip: string, userAgent: string) {
+        // Busca al usuario por su nombre de usuario
+        const usuario = await this.usuariosService.findByUsername(username);
 
-        if (!usuario) {
-            return { valido: false }; // Indica que el código no es válido si el usuario no existe
+        // Si el usuario no existe o no tiene un código de recuperación, el código no es válido
+        if (!usuario || !usuario.codigoRecuperacion) {
+            return { valido: false };
         }
 
-        // Simulación de verificación de código (la lógica real iría aquí, comparando con un código almacenado)
-        const codigoValido = false;
+        // Compara el código proporcionado con el código almacenado del usuario
+        const codigoValido = usuario.codigoRecuperacion === _codigo;
 
+        // Si el código no es válido, registra el evento de intento fallido
         if (!codigoValido) {
-            await this.eventosSeguridadService.registrarCodigoVerificacionFallido(usuario.id, ip, userAgent); // Registra el evento de código de verificación fallido
-            return { valido: false }; // Indica que el código no es válido
+            await this.eventosSeguridadService.registrarCodigoVerificacionFallido(usuario.id, ip, userAgent);
+            return { valido: false };
         }
 
-        return { valido: true }; // Indica que el código es válido
+        // Verifica si el código de recuperación tiene una fecha de expiración
+        if (!usuario.codigoFechaExpiracion) {
+            return { valido: false, mensaje: 'El código de recuperación no tiene fecha de expiración.' };
+        }
+
+        // Compara la fecha de expiración del código con la fecha actual
+        const ahora = new Date();
+        const tiempoLimite = new Date(usuario.codigoFechaExpiracion);
+
+        // Si la fecha actual es posterior a la fecha de expiración, el código ha expirado
+        if (ahora > tiempoLimite) {
+            return { valido: false, mensaje: 'El código ha expirado' };
+        }
+
+        // Si el código es válido y no ha expirado, retorna que es válido
+        return { valido: true };
     }
 }

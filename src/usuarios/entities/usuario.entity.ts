@@ -1,23 +1,29 @@
 import { Entity, Column, PrimaryGeneratedColumn, OneToMany } from 'typeorm';
 import { EventoSeguridad } from '../../eventos-seguridad/entities/eventos-seguridad.entity';
 
-@Entity('usuarios') // Define esta clase como una entidad de base de datos con el nombre 'usuarios'
+@Entity('usuarios') // Define esta clase como una entidad de TypeORM que se mapeará a una tabla llamada 'usuarios' en la base de datos
 export class Usuario {
-    @PrimaryGeneratedColumn() // Define esta columna como la clave primaria autogenerada
+    @PrimaryGeneratedColumn() // Marca esta propiedad como la clave primaria de la entidad y se generará automáticamente
     id: number;
 
-    @Column({ unique: true }) // Define una columna para el nombre de usuario, que debe ser único
-    username: string; // Nombre de usuario
+    @Column({ unique: true }) // Define esta propiedad como una columna de la base de datos y asegura que los valores sean únicos
+    username: string;
 
-    @Column() // Define una columna para la contraseña
-    password: string; // Contraseña del usuario (se espera que esté hasheada)
+    @Column() // Define esta propiedad como una columna de la base de datos
+    password: string;
 
-    @Column({ default: true }) // Define una columna para el estado del usuario, con valor por defecto 'true' (activo)
-    estado: boolean; // Indica si el usuario está activo (true) o inactivo/bloqueado (false)
+    @Column({ default: true }) // Define esta propiedad como una columna de la base de datos y establece su valor predeterminado en true
+    estado: boolean;
 
-    @Column({ default: 'usuario' }) // Define una columna para el rol del usuario, con valor por defecto 'usuario'
-    rol: string; // Rol del usuario (ej., 'admin', 'usuario')
+    @Column({ default: 'usuario' }) // Define esta propiedad como una columna de la base de datos y establece su valor predeterminado en 'usuario'
+    rol: string;
 
-    @OneToMany(() => EventoSeguridad, evento => evento.usuario) // Define una relación One-to-Many con la entidad EventoSeguridad, donde muchos eventos pueden pertenecer a un usuario
-    eventos: EventoSeguridad[]; // Array de eventos de seguridad asociados a este usuario
+    @Column({ type: 'timestamp', nullable: true }) // Define esta propiedad como una columna de tipo timestamp en la base de datos y permite valores nulos
+    codigoFechaExpiracion: Date | null;
+
+    @Column({ type: 'varchar', length: 255, nullable: true }) // Define esta propiedad como una columna de tipo VARCHAR con una longitud máxima de 255 caracteres y permite valores nulos
+    codigoRecuperacion: string | null;
+
+    @OneToMany(() => EventoSeguridad, evento => evento.usuario) // Define una relación OneToMany con la entidad EventoSeguridad. Un usuario puede tener muchos eventos de seguridad. 'evento => evento.usuario' especifica la propiedad en la entidad EventoSeguridad que establece la relación inversa.
+    eventos: EventoSeguridad[];
 }
