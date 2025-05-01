@@ -80,6 +80,17 @@ export class EventosSeguridadService {
         });
     }
 
+    // Registra un evento de inicio de sesión exitoso
+    async registrarLoginExitoso(usuario_id: number, ip: string, user_agent: string): Promise<EventoSeguridad> {
+        return this.create({
+            tipo: TipoEvento.LOGIN_EXITOSO,
+            usuario_id,
+            ip,
+            user_agent,
+            descripcion: `Inicio de sesión exitoso para usuario ID: ${usuario_id}`,
+        });
+    }
+
     // Obtiene todos los eventos de seguridad registrados en el día actual
     async obtenerEventosDelDia(): Promise<EventoSeguridad[]> {
         const hoy = new Date(); // Obtiene la fecha actual
@@ -114,6 +125,23 @@ export class EventosSeguridadService {
                 tipo: TipoEvento.LOGIN_FALLIDO, // Filtra solo los eventos de tipo inicio de sesión fallido
                 fecha: Between(desde, new Date()), // Filtra los eventos cuya fecha esté entre la fecha 'desde' y la fecha actual
             },
+        });
+    }
+
+    async obtenerLoginExitososDelDia(): Promise<EventoSeguridad[]> {
+        const hoy = new Date();
+        const inicio = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+        const fin = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 1);
+
+        return this.eventoSeguridadRepository.find({
+            where: {
+                tipo: TipoEvento.LOGIN_EXITOSO,
+                fecha: Between(inicio, fin)
+            },
+            relations: ['usuario'],
+            order: {
+                fecha: 'DESC'
+            }
         });
     }
 }

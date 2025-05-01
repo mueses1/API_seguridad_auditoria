@@ -2,6 +2,7 @@ import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, JoinColumn } from 't
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 
 export enum TipoEvento {
+    LOGIN_EXITOSO = 'LOGIN_EXITOSO',
     LOGIN_FALLIDO = 'LOGIN_FALLIDO', // Evento para un intento de inicio de sesión fallido
     INTENTOS_MULTIPLES = 'INTENTOS_MULTIPLES', // Evento cuando un usuario realiza múltiples intentos fallidos
     USUARIO_BLOQUEADO = 'USUARIO_BLOQUEADO', // Evento cuando un usuario es bloqueado

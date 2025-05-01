@@ -1,6 +1,6 @@
 export class LoginSuccessUser {
     username: string; // Nombre de usuario que inició sesión exitosamente
-    fecha: Date; // Fecha y hora del inicio de sesión exitoso
+    timestamp: Date;
 }
 
 export class LoginFailedUser {

@@ -23,20 +23,24 @@ export class AdminService {
     ) { }
 
     async generarReporteDia(): Promise<ReporteDiaDto> {
-        const eventos = await this.eventosSeguridadService.obtenerEventosDelDia(); // Obtiene los eventos de seguridad del día
+        const eventos = await this.eventosSeguridadService.obtenerEventosDelDia();
 
-        const loginExitosos: LoginSuccessUser[] = []; // Inicializa un array para los logins exitosos (actualmente vacío)
+        // Obtener los eventos de inicio de sesión exitosos
+        const loginExitosos = await this.eventosSeguridadService.obtenerLoginExitososDelDia();
 
-        const loginFallidos = await this.obtenerLoginFallidos(); // Obtiene los intentos fallidos de login del día
-        const codigosFallidos = await this.obtenerCodigosFallidos(); // Obtiene los intentos fallidos de códigos de recuperación del día
-        const usuariosConMultiplesErrores = await this.obtenerUsuariosConMultiplesErrores(); // Obtiene los usuarios con múltiples errores de acceso
+        const loginFallidos = await this.obtenerLoginFallidos();
+        const codigosFallidos = await this.obtenerCodigosFallidos();
+        const usuariosConMultiplesErrores = await this.obtenerUsuariosConMultiplesErrores();
 
         return {
-            loginExitosos,
+            loginExitosos: loginExitosos.map(evento => ({
+                username: evento.usuario?.username || 'Usuario Desconocido',
+                timestamp: evento.fecha
+            })),
             loginFallidos,
             codigosFallidos,
             usuariosConMultiplesErrores,
-            fecha: new Date(), // Establece la fecha del reporte al día actual
+            fecha: new Date(),
         };
     }
 
@@ -109,39 +113,96 @@ export class AdminService {
     }
 
     async enviarReportePorCorreo(adminId: number): Promise<void> {
-        const reporte = await this.generarReporteDia(); // Genera el reporte del día
-        //formato del reporte generado
+        const reporte = await this.generarReporteDia();
+        const fechaFormateada = reporte.fecha.toLocaleDateString('es-ES', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric',
+            hour: '2-digit',
+            minute: '2-digit'
+        });
+
         const htmlContent = `
-            <h1>Reporte de Seguridad - ${reporte.fecha.toLocaleDateString()}</h1>
-            
-            <h2>Usuarios que iniciaron sesión correctamente</h2>
-            <ul>
-                ${reporte.loginExitosos.map(u => `<li>${u.username}</li>`).join('')}
-            </ul>
-            
-            <h2>Usuarios con intentos fallidos</h2>
-            <ul>
-                ${reporte.loginFallidos.map(u => `<li>Usuario ID: ${u.usuario_id} - ${u.intentos} intentos</li>`).join('')}
-            </ul>
-            
-            <h2>Códigos de recuperación fallidos</h2>
-            <ul>
-                ${reporte.codigosFallidos.map(c => `<li>Usuario ID: ${c.usuario_id} - ${c.fecha.toLocaleString()}</li>`).join('')}
-            </ul>
-            
-            <h2>Usuarios con múltiples errores</h2>
-            <ul>
-                ${reporte.usuariosConMultiplesErrores.map(u => `<li>Usuario ID: ${u.usuario_id} - ${u.errores} errores</li>`).join('')}
-            </ul>
+            <div style="font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px;">
+                <h1 style="color: #2c3e50; text-align: center; border-bottom: 2px solid #3498db; padding-bottom: 10px;">
+                    Reporte de Seguridad - ${fechaFormateada}
+                </h1>
+                
+                <div style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
+                    <h2 style="color: #27ae60;">Usuarios que iniciaron sesión correctamente</h2>
+                    ${reporte.loginExitosos.length === 0 ?
+                '<p style="color: #666;">No hubo inicios de sesión exitosos en este período.</p>' :
+                `<ul style="list-style-type: none; padding: 0;">
+                            ${reporte.loginExitosos.map(u => `
+                                <li style="margin: 10px 0; padding: 10px; background-color: #e8f5e9; border-radius: 4px;">
+                                    <strong>Usuario:</strong> ${u.username}<br>
+                                    <strong>Hora:</strong> ${new Date(u.timestamp).toLocaleTimeString('es-ES')}
+                                </li>
+                            `).join('')}
+                        </ul>`
+            }
+                </div>
+
+                <div style="margin: 20px 0; padding: 15px; background-color: #fff3e0; border-radius: 5px;">
+                    <h2 style="color: #f39c12;">Usuarios con intentos fallidos</h2>
+                    ${reporte.loginFallidos.length === 0 ?
+                '<p style="color: #666;">No se registraron intentos fallidos de inicio de sesión.</p>' :
+                `<ul style="list-style-type: none; padding: 0;">
+                            ${reporte.loginFallidos.map(u => `
+                                <li style="margin: 10px 0; padding: 10px; background-color: #fff7e6; border-radius: 4px;">
+                                    <strong>ID de Usuario:</strong> ${u.usuario_id}<br>
+                                    <strong>Número de intentos:</strong> ${u.intentos}
+                                </li>
+                            `).join('')}
+                        </ul>`
+            }
+                </div>
+
+                <div style="margin: 20px 0; padding: 15px; background-color: #ffebee; border-radius: 5px;">
+                    <h2 style="color: #c0392b;">Códigos de recuperación fallidos</h2>
+                    ${reporte.codigosFallidos.length === 0 ?
+                '<p style="color: #666;">No se registraron intentos fallidos de códigos de recuperación.</p>' :
+                `<ul style="list-style-type: none; padding: 0;">
+                            ${reporte.codigosFallidos.map(c => `
+                                <li style="margin: 10px 0; padding: 10px; background-color: #ffeaea; border-radius: 4px;">
+                                    <strong>ID de Usuario:</strong> ${c.usuario_id}<br>
+                                    <strong>Fecha y hora:</strong> ${c.fecha.toLocaleString('es-ES')}
+                                </li>
+                            `).join('')}
+                        </ul>`
+            }
+                </div>
+
+                <div style="margin: 20px 0; padding: 15px; background-color: #e8eaf6; border-radius: 5px;">
+                    <h2 style="color: #3f51b5;">Usuarios con múltiples errores</h2>
+                    ${reporte.usuariosConMultiplesErrores.length === 0 ?
+                '<p style="color: #666;">No se registraron usuarios con múltiples errores.</p>' :
+                `<ul style="list-style-type: none; padding: 0;">
+                            ${reporte.usuariosConMultiplesErrores.map(u => `
+                                <li style="margin: 10px 0; padding: 10px; background-color: #e3f2fd; border-radius: 4px;">
+                                    <strong>ID de Usuario:</strong> ${u.usuario_id}<br>
+                                    <strong>Total de errores:</strong> ${u.errores}
+                                </li>
+                            `).join('')}
+                        </ul>`
+            }
+                </div>
+
+                <div style="margin-top: 30px; text-align: center; color: #7f8c8d; font-size: 12px;">
+                    <p>Este es un reporte automático generado por el sistema de seguridad.</p>
+                    <p>Por favor, revise cualquier actividad sospechosa.</p>
+                </div>
+            </div>
         `;
 
-        await this.mailerService.sendMail({ // Envía el correo electrónico con el reporte
-            to: 'admin@mail.com', // Dirección de correo del administrador (hardcoded)
-            subject: `Reporte de Seguridad - ${reporte.fecha.toLocaleDateString()}`,
+        await this.mailerService.sendMail({
+            to: 'admin@mail.com',
+            subject: `Reporte de Seguridad - ${fechaFormateada}`,
             html: htmlContent,
         });
 
-        await this.accionAdminService.registrarAccion( // Registra la acción de envío de reporte
+        await this.accionAdminService.registrarAccion(
             adminId,
             TipoAccionAdmin.ENVIAR_REPORTE,
             null,

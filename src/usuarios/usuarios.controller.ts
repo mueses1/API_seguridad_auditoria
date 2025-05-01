@@ -39,6 +39,12 @@ export class UsuariosController {
                 estado: true
             },
             {
+                username: 'usuario_normal',
+                password: 'password123',
+                rol: 'usuario',
+                estado: true
+            },
+            {
                 username: 'usuario_bloqueado',
                 password: 'password123',
                 rol: 'usuario',

@@ -67,14 +67,14 @@ export class AuthService {
 
     // Genera un token JWT para un usuario autenticado
     async login(user: any, ip: string, userAgent: string) {
-        // Define la carga útil (payload) que se incluirá en el token JWT
         const payload = { username: user.username, sub: user.id, rol: user.rol };
 
-        // Aquí se podría registrar un evento de inicio de sesión exitoso
+        // Registrar el evento de inicio de sesión exitoso
+        await this.eventosSeguridadService.registrarLoginExitoso(user.id, ip, userAgent);
 
         return {
-            access_token: this.jwtService.sign(payload), // Firma la carga útil y genera el token JWT
-            user: { // Retorna información del usuario junto con el token
+            access_token: this.jwtService.sign(payload),
+            user: {
                 id: user.id,
                 username: user.username,
                 rol: user.rol,
