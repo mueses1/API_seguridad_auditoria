@@ -38,6 +38,9 @@ export class AdminService {
         // Obtiene los usuarios que han tenido múltiples errores de inicio de sesión o verificación de código
         const usuariosConMultiplesErrores = await this.obtenerUsuariosConMultiplesErrores();
 
+        // Obtiene las acciones administrativas de creación de usuarios del día
+        const accionesCreacionUsuarios = await this.accionAdminService.obtenerAccionesPorTipoDelDia(TipoAccionAdmin.CREAR_USUARIO);
+
         // Agrupa los eventos por dirección IP para detectar patrones sospechosos
         const eventosIp = new Map<string, { intentos: number, userAgents: Set<string> }>();
         eventos.forEach(evento => {
@@ -64,7 +67,8 @@ export class AdminService {
                 loginFallidos: loginFallidos.reduce((sum, u) => sum + u.intentos, 0),
                 codigosFallidos: codigosFallidos.length,
                 usuariosBloqueados: loginFallidos.filter(u => !u.estado).length,
-                usuariosConMultiplesErrores: usuariosConMultiplesErrores.length
+                usuariosConMultiplesErrores: usuariosConMultiplesErrores.length,
+                usuariosCreados: accionesCreacionUsuarios.length
             },
             loginExitosos: loginExitosos.map(evento => ({
                 username: evento.usuario?.username || 'Usuario Desconocido',
@@ -223,8 +227,8 @@ export class AdminService {
                 <div style="margin: 20px 0; padding: 15px; background-color: #f8f9fa; border-radius: 5px;">
                     <h2 style="color: #27ae60;">Inicios de Sesión Exitosos</h2>
                     ${reporte.loginExitosos.length === 0 ?
-                        '<p style="color: #666;">No hubo inicios de sesión exitosos en este período.</p>' :
-                        `<ul style="list-style-type: none; padding: 0;">
+                '<p style="color: #666;">No hubo inicios de sesión exitosos en este período.</p>' :
+                `<ul style="list-style-type: none; padding: 0;">
                                 ${reporte.loginExitosos.map(u => `
                                     <li style="margin: 10px 0; padding: 10px; background-color: #e8f5e9; border-radius: 4px;">
                                         <strong>Usuario:</strong> ${u.username}<br>
@@ -234,14 +238,14 @@ export class AdminService {
                                     </li>
                                 `).join('')}
                             </ul>`
-                    }
+            }
                 </div>
 
                 <div style="margin: 20px 0; padding: 15px; background-color: #fff3e0; border-radius: 5px;">
                     <h2 style="color: #f39c12;">Intentos de Inicio de Sesión Fallidos</h2>
                     ${reporte.loginFallidos.length === 0 ?
-                        '<p style="color: #666;">No se registraron intentos fallidos de inicio de sesión.</p>' :
-                        `<ul style="list-style-type: none; padding: 0;">
+                '<p style="color: #666;">No se registraron intentos fallidos de inicio de sesión.</p>' :
+                `<ul style="list-style-type: none; padding: 0;">
                                 ${reporte.loginFallidos.map(u => `
                                     <li style="margin: 10px 0; padding: 10px; background-color: #fff7e6; border-radius: 4px;">
                                         <strong>Usuario:</strong> ${u.username}<br>
@@ -251,14 +255,14 @@ export class AdminService {
                                     </li>
                                 `).join('')}
                             </ul>`
-                    }
+            }
                 </div>
 
                 <div style="margin: 20px 0; padding: 15px; background-color: #ffebee; border-radius: 5px;">
                     <h2 style="color: #c0392b;">Códigos de Recuperación Fallidos</h2>
                     ${reporte.codigosFallidos.length === 0 ?
-                        '<p style="color: #666;">No se registraron intentos fallidos de códigos de recuperación.</p>' :
-                        `<ul style="list-style-type: none; padding: 0;">
+                '<p style="color: #666;">No se registraron intentos fallidos de códigos de recuperación.</p>' :
+                `<ul style="list-style-type: none; padding: 0;">
                                 ${reporte.codigosFallidos.map(c => `
                                     <li style="margin: 10px 0; padding: 10px; background-color: #ffeaea; border-radius: 4px;">
                                         <strong>Usuario:</strong> ${c.username}<br>
@@ -268,14 +272,14 @@ export class AdminService {
                                     </li>
                                 `).join('')}
                             </ul>`
-                    }
+            }
                 </div>
 
                 <div style="margin: 20px 0; padding: 15px; background-color: #e8eaf6; border-radius: 5px;">
                     <h2 style="color: #3f51b5;">Usuarios con Múltiples Errores</h2>
                     ${reporte.usuariosConMultiplesErrores.length === 0 ?
-                        '<p style="color: #666;">No se registraron usuarios con múltiples errores.</p>' :
-                        `<ul style="list-style-type: none; padding: 0;">
+                '<p style="color: #666;">No se registraron usuarios con múltiples errores.</p>' :
+                `<ul style="list-style-type: none; padding: 0;">
                                 ${reporte.usuariosConMultiplesErrores.map(u => `
                                     <li style="margin: 10px 0; padding: 10px; background-color: #e3f2fd; border-radius: 4px;">
                                         <strong>Usuario:</strong> ${u.username}<br>
@@ -285,7 +289,7 @@ export class AdminService {
                                     </li>
                                 `).join('')}
                             </ul>`
-                    }
+            }
                 </div>
 
                 ${reporte.ipsSospechosas.length > 0 ? `

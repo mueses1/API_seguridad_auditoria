@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request } from '@nestjs/common';
 import { UsuariosService } from './usuarios.service';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
@@ -23,8 +23,8 @@ export class UsuariosController {
     @Post() // Define un endpoint POST en '/usuarios'
     @UseGuards(JwtAuthGuard, RolesGuard) // Aplica los guardias de autenticación JWT y de roles
     @Roles('admin') // Requiere que el usuario tenga el rol de 'admin' para acceder a esta ruta
-    async create(@Body() createUsuarioDto: CreateUsuarioDto): Promise<Usuario> {
-        return this.usuariosService.create(createUsuarioDto); // Llama al servicio para crear un nuevo usuario
+    async create(@Body() createUsuarioDto: CreateUsuarioDto, @Request() req): Promise<Usuario> {
+        return this.usuariosService.create(createUsuarioDto, req.user.id); // Llama al servicio para crear un nuevo usuario
     }
 
     @Post('crear-prueba') // Define un endpoint POST en '/usuarios/crear-prueba'

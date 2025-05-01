@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Between } from 'typeorm';
 import { AccionAdmin, TipoAccionAdmin } from '../entities/accion-admin.entity';
 import { Usuario } from '../../usuarios/entities/usuario.entity';
 
@@ -57,6 +57,19 @@ export class AccionAdminService {
             where: { usuario_afectado_id: usuarioId }, // Filtra las acciones por el usuario_afectado_id proporcionado
             relations: ['admin', 'usuario_afectado'], // Carga las relaciones con las entidades Usuario
             order: { fecha: 'DESC' } // Ordena las acciones por fecha de forma descendente
+        });
+    }
+
+    async obtenerAccionesPorTipoDelDia(tipo: TipoAccionAdmin): Promise<AccionAdmin[]> {
+        return this.accionAdminRepository.find({
+            where: {
+                tipo: tipo,
+                fecha: Between(
+                    new Date(new Date().setHours(0, 0, 0, 0)),
+                    new Date(new Date().setHours(23, 59, 59, 999))
+                )
+            },
+            relations: ['admin', 'usuario_afectado']
         });
     }
 }

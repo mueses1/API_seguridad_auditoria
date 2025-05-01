@@ -39,6 +39,7 @@ export class Estadisticas {
     codigosFallidos: number; // Número total de intentos fallidos de uso de códigos de recuperación
     usuariosBloqueados: number; // Número de usuarios que están actualmente bloqueados
     usuariosConMultiplesErrores: number; // Número de usuarios que han tenido múltiples errores
+    usuariosCreados: number; // Número de usuarios creados en el período
 }
 
 export class ReporteDiaDto {

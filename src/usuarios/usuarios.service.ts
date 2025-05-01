@@ -5,6 +5,8 @@ import { Usuario } from './entities/usuario.entity';
 import { CreateUsuarioDto } from './dto/create-usuario.dto';
 import { UpdateUsuarioDto } from './dto/update-usuario.dto';
 import * as bcrypt from 'bcrypt';
+import { AccionAdminService } from '../admin/services/accion-admin.service';
+import { TipoAccionAdmin } from '../admin/entities/accion-admin.entity';
 
 @Injectable() // Marca la clase como un servicio gestionado por NestJS
 export class UsuariosService {
@@ -12,10 +14,11 @@ export class UsuariosService {
     constructor(
         @InjectRepository(Usuario)
         private usuarioRepository: Repository<Usuario>,
+        private readonly accionAdminService: AccionAdminService,
     ) { }
 
     // Crea un nuevo usuario en la base de datos
-    async create(createUsuarioDto: CreateUsuarioDto): Promise<Usuario> {
+    async create(createUsuarioDto: CreateUsuarioDto, adminId?: number): Promise<Usuario> {
         // Extrae la contraseña del DTO de creación
         const { password } = createUsuarioDto;
         // Hashea la contraseña utilizando bcrypt con un factor de costo de 10
@@ -28,7 +31,19 @@ export class UsuariosService {
         });
 
         // Guarda el nuevo usuario en la base de datos y devuelve la entidad guardada
-        return this.usuarioRepository.save(usuario);
+        const usuarioCreado = await this.usuarioRepository.save(usuario);
+
+        // Si hay un adminId, registrar la acción administrativa
+        if (adminId) {
+            await this.accionAdminService.registrarAccion(
+                adminId,
+                TipoAccionAdmin.CREAR_USUARIO,
+                usuarioCreado.id,
+                `Usuario ${usuarioCreado.username} creado por el administrador`
+            );
+        }
+
+        return usuarioCreado;
     }
 
     // Obtiene todos los usuarios de la base de datos
