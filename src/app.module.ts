@@ -42,12 +42,12 @@ import { AccionAdmin } from './admin/entities/accion-admin.entity';
                     port: config.get('MAIL_PORT', 587), // Obtiene el puerto del servidor SMTP desde la configuración o usa 587 por defecto
                     secure: false, // Indica si la conexión debe ser segura (TLS/SSL)
                     auth: { // Configuración de la autenticación del correo electrónico
-                        user: config.get('MAIL_USER', 'user@example.com'), // Obtiene el usuario del correo electrónico desde la configuración o usa 'user@example.com' por defecto
+                        user: config.get('MAIL_USER', 'muesesnicolas58@gmail.com'), // Obtiene el usuario del correo electrónico desde la configuración
                         pass: config.get('MAIL_PASSWORD', 'password'), // Obtiene la contraseña del correo electrónico desde la configuración o usa 'password' por defecto
                     },
                 },
                 defaults: { // Configuración por defecto para los correos electrónicos
-                    from: config.get('MAIL_FROM', '"No Reply" <noreply@example.com>'), // Obtiene la dirección 'From' por defecto desde la configuración o usa '"No Reply" <noreply@example.com>' por defecto
+                    from: config.get('MAIL_FROM', '"Soporte Tecnico" <soporte@seguridad_auditoria.com>'), // Obtiene la dirección 'From' por defecto desde la configuración o usa por defecto el que en el ejemplo.
                 },
             }),
         }),
