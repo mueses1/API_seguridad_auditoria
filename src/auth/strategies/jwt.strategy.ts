@@ -5,7 +5,7 @@ import { ConfigService } from '@nestjs/config';
 
 @Injectable() // Marca la clase como un servicio 
 export class JwtStrategy extends PassportStrategy(Strategy) { // Define una estrategia de autenticación JWT utilizando Passport
-    constructor(private configService: ConfigService) { // Inyecta el servicio de configuración de NestJS
+    constructor(configService: ConfigService) { // Inyecta el servicio de configuración de NestJS
         super({
             jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(), // Especifica cómo extraer el JWT de la solicitud (del encabezado Authorization como Bearer token)
             ignoreExpiration: false, // Indica si se debe ignorar la expiración del token (generalmente false para seguridad)

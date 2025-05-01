@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository, Between, In } from 'typeorm';
 import { EventosSeguridadService } from '../eventos-seguridad/eventos-seguridad.service';
-import { UsuariosService } from '../usuarios/usuarios.service';
 import { EventoSeguridad, TipoEvento } from '../eventos-seguridad/entities/eventos-seguridad.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
 import { ReporteDiaDto, LoginSuccessUser, LoginFailedUser, FailedRecoveryCode, MultipleFailedUser } from './dto/reporte-dia.dto';
@@ -15,7 +14,6 @@ import { TipoAccionAdmin } from './entities/accion-admin.entity';
 export class AdminService {
     constructor(
         private readonly eventosSeguridadService: EventosSeguridadService, // Inyecta el servicio de eventos de seguridad
-        private readonly usuariosService: UsuariosService, // Inyecta el servicio de usuarios
         private readonly mailerService: MailerService, // Inyecta el servicio de correo electrónico
         private readonly accionAdminService: AccionAdminService, // Inyecta el servicio de acciones de administrador
         @InjectRepository(EventoSeguridad) // Inyecta el repositorio de la entidad EventoSeguridad
