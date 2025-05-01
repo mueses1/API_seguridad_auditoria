@@ -35,8 +35,7 @@ export class AuthService {
             ultimasHoras.setHours(ultimasHoras.getHours() - 1); // Resta una hora para verificar intentos recientes
 
             // Llama a una función (a implementar) para contar los intentos fallidos recientes del usuario
-            const intentosFallidos = await this.contarIntentosFallidosRecientes(usuario.id, ultimasHoras);
-
+            const intentosFallidos = await this.eventosSeguridadService.contarIntentosFallidosRecientes(usuario.id, ultimasHoras);
             if (intentosFallidos >= 5) { // Si el número de intentos fallidos recientes es igual o mayor a 5
                 await this.usuariosService.actualizarEstado(usuario.id, false); // Bloquea al usuario
                 await this.eventosSeguridadService.registrarIntentoMultiple(usuario.id, ip, userAgent, intentosFallidos); // Registra el evento de múltiples intentos fallidos
@@ -112,13 +111,5 @@ export class AuthService {
         }
 
         return { valido: true }; // Indica que el código es válido
-    }
-
-    private async contarIntentosFallidosRecientes(usuarioId: number, desde: Date): Promise<number> {
-        // Esta función debería implementarse en el servicio de eventos de seguridad
-        // para consultar la base de datos y contar los eventos de login fallido
-        // para el usuario especificado dentro del período de tiempo 'desde'.
-        // La siguiente línea es una simplificación y debe ser reemplazada
-        return 0;
     }
 }

@@ -89,4 +89,17 @@ export class EventosSeguridadService {
             take: 10, // Limita el número de resultados a 10
         });
     }
+    async contarIntentosFallidosRecientes(usuario_id: number, desde: Date): Promise<number> {
+        // Utiliza el repositorio de eventos de seguridad para contar los registros de intentos fallidos de login
+        return await this.eventoSeguridadRepository.count({
+            where: {
+                // Filtra por el ID del usuario
+                usuario_id, 
+                // Filtra solo eventos de tipo 'LOGIN_FALLIDO'
+                tipo: TipoEvento.LOGIN_FALLIDO,
+                // Filtra los eventos cuya fecha esté dentro del rango especificado
+                fecha: Between(desde, new Date()), 
+            },
+        });
+    }
 }
