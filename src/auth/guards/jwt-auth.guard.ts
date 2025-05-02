@@ -7,7 +7,7 @@ export class JwtAuthGuard extends AuthGuard('jwt') { // Extiende el AuthGuard de
         return super.canActivate(context); // Llama al método canActivate del AuthGuard padre para ejecutar la lógica de autenticación JWT
     }
 
-    handleRequest(err: any, user: any, info: any) {
+    handleRequest(err: any, user: any) {
         if (err || !user) { // Si hay un error durante la autenticación o no se encuentra el usuario
             throw err || new UnauthorizedException(); // Lanza una excepción de no autorizado
         }

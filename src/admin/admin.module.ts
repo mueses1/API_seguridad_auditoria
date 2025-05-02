@@ -11,14 +11,15 @@ import { AccionAdmin } from './entities/accion-admin.entity';
 import { AccionAdminService } from './services/accion-admin.service';
 import { AccionAdminController } from './controllers/accion-admin.controller';
 
+// Módulo principal para funcionalidades de administración
 @Module({
-    imports: [ // Importa otros módulos necesarios para este módulo
-        TypeOrmModule.forFeature([EventoSeguridad, Usuario, AccionAdmin]), // Configura TypeORM para las entidades EventoSeguridad, Usuario y AccionAdmin en este módulo
-        EventosSeguridadModule, // Importa el módulo de Eventos de Seguridad
-        UsuariosModule, // Importa el módulo de Usuarios
-        MailerModule, // Importa el módulo de Mailer para enviar correos electrónicos
+    imports: [
+        TypeOrmModule.forFeature([EventoSeguridad, Usuario, AccionAdmin]), // Entidades usadas en este módulo
+        EventosSeguridadModule, // Módulo de eventos de seguridad
+        UsuariosModule, // Módulo de gestión de usuarios
+        MailerModule, // Módulo para envío de correos electrónicos
     ],
-    controllers: [AdminController, AccionAdminController], // Declara los controladores que pertenecen a este módulo
-    providers: [AdminService, AccionAdminService], // Declara los proveedores (servicios) que son gestionados por este módulo
+    controllers: [AdminController, AccionAdminController], // Controladores del módulo
+    providers: [AdminService, AccionAdminService], // Servicios del módulo
 })
-export class AdminModule { } // Exporta la clase del módulo AdminModule
+export class AdminModule { }

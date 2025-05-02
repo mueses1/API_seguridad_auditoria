@@ -22,6 +22,6 @@ export class AccionAdminController {
         if (usuarioId) { // Si se proporciona usuarioId (y no adminId)
             return this.accionAdminService.obtenerAccionesPorUsuario(usuarioId); // Obtiene acciones por ID de usuario
         }
-        return this.accionAdminService.obtenerAcciones(); // Obtiene todas las acciones si no se proporcionan filtros
+        return this.accionAdminService.obtenerAcciones(); // Obtiene todas las acciones
     }
 }

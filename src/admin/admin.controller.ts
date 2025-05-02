@@ -7,46 +7,52 @@ import { ReporteDiaDto } from './dto/reporte-dia.dto';
 import { UsuarioConEventos } from './interfaces/usuario-con-eventos.interface';
 import { RequestWithUser } from '../auth/interfaces/request-with-user.interface';
 
-@Controller('admin') // Define la ruta base del controlador como 'admin'
-@UseGuards(JwtAuthGuard, RolesGuard) // Aplica los guardias de autenticación JWT y de roles a todas las rutas
-@Roles('admin') // Requiere que el usuario tenga el rol de 'admin' para acceder a estas rutas
+// Controlador para rutas de administración protegidas y accesibles solo por admins
+@Controller('admin')
+@UseGuards(JwtAuthGuard, RolesGuard) // Autenticación JWT y verificación de roles
+@Roles('admin') // Solo usuarios con rol 'admin' pueden acceder
 export class AdminController {
-    constructor(private readonly adminService: AdminService) { } // Inyecta el servicio AdminService
+    constructor(private readonly adminService: AdminService) {}
 
-    @Get('reporte-dia') // Define un endpoint GET en '/admin/reporte-dia'
+    // Genera el reporte del día actual (seguridad, logins, etc.)
+    @Get('reporte-dia')
     async obtenerReporteDia(): Promise<ReporteDiaDto> {
-        return this.adminService.generarReporteDia(); // Llama al servicio para generar el reporte del día
+        return this.adminService.generarReporteDia();
     }
 
-    @Post('enviar-reporte') // Define un endpoint POST en '/admin/enviar-reporte'
+    // Envía el reporte del día al correo del admin autenticado
+    @Post('enviar-reporte')
     async enviarReporte(@Req() req: RequestWithUser): Promise<{ message: string }> {
-        const adminId = req.user.sub; // Obtiene el ID del administrador del objeto de la solicitud (usuario autenticado)
-        await this.adminService.enviarReportePorCorreo(adminId); // Llama al servicio para enviar el reporte por correo al administrador
-        return { message: 'Reporte enviado exitosamente' }; // Retorna un mensaje de éxito
+        const adminId = req.user.sub; // Obtiene ID del admin desde el token JWT
+        await this.adminService.enviarReportePorCorreo(adminId);
+        return { message: 'Reporte enviado exitosamente' };
     }
 
-    @Get('usuarios/monitorear') // Define un endpoint GET en '/admin/usuarios/monitorear'
+    // Obtiene lista de usuarios con sus eventos de seguridad recientes
+    @Get('usuarios/monitorear')
     async monitorearUsuarios(): Promise<UsuarioConEventos[]> {
-        return this.adminService.monitorearUsuarios(); // Llama al servicio para obtener la lista de usuarios con sus eventos de seguridad
+        return this.adminService.monitorearUsuarios();
     }
 
-    @Patch('usuarios/bloquear/:id') // Define un endpoint PATCH en '/admin/usuarios/bloquear/:id'
+    // Bloquea un usuario por su ID
+    @Patch('usuarios/bloquear/:id')
     async bloquearUsuario(
-        @Param('id') id: string, // Obtiene el ID del usuario a bloquear desde los parámetros de la ruta
-        @Req() req: RequestWithUser // Inyecta el objeto de la solicitud con la información del usuario autenticado
+        @Param('id') id: string,
+        @Req() req: RequestWithUser
     ): Promise<{ message: string }> {
-        const adminId = req.user.sub; // Obtiene el ID del administrador
-        await this.adminService.bloquearUsuario(parseInt(id), adminId); // Llama al servicio para bloquear al usuario con el ID proporcionado, registrando la acción del administrador
-        return { message: 'Usuario bloqueado exitosamente' }; // Retorna un mensaje de éxito
+        const adminId = req.user.sub;
+        await this.adminService.bloquearUsuario(parseInt(id), adminId);
+        return { message: 'Usuario bloqueado exitosamente' };
     }
 
-    @Patch('usuarios/desbloquear/:id') // Define un endpoint PATCH en '/admin/usuarios/desbloquear/:id'
+    // Desbloquea un usuario por su ID
+    @Patch('usuarios/desbloquear/:id')
     async desbloquearUsuario(
-        @Param('id') id: string, // Obtiene el ID del usuario a desbloquear desde los parámetros de la ruta
-        @Req() req: RequestWithUser // Inyecta el objeto de la solicitud con la información del usuario autenticado
+        @Param('id') id: string,
+        @Req() req: RequestWithUser
     ): Promise<{ message: string }> {
-        const adminId = req.user.sub; // Obtiene el ID del administrador
-        await this.adminService.desbloquearUsuario(parseInt(id), adminId); // Llama al servicio para desbloquear al usuario con el ID proporcionado, registrando la acción del administrador
-        return { message: 'Usuario desbloqueado exitosamente' }; // Retorna un mensaje de éxito
+        const adminId = req.user.sub;
+        await this.adminService.desbloquearUsuario(parseInt(id), adminId);
+        return { message: 'Usuario desbloqueado exitosamente' };
     }
 }

@@ -1,53 +1,60 @@
+// Usuario que inició sesión exitosamente
 export class LoginSuccessUser {
-    username: string; // Nombre de usuario que inició sesión exitosamente
-    timestamp: Date; // Fecha y hora del inicio de sesión exitoso
-    ip: string; // Dirección IP desde la que se realizó el inicio de sesión
-    userAgent: string; // Agente de usuario del navegador o aplicación
+    username: string; // Nombre de usuario
+    timestamp: Date; // Fecha y hora del login
+    ip: string; // IP desde la que se conectó
+    userAgent: string; // Navegador/dispositivo usado
 }
 
+// Intentos fallidos de inicio de sesión
 export class LoginFailedUser {
-    usuario_id: number; // ID del usuario que falló al iniciar sesión
-    username: string; // Nombre de usuario que intentó iniciar sesión
-    intentos: number; // Número de intentos fallidos de inicio de sesión para este usuario en el período
-    estado: boolean; // Estado actual del usuario (activo o bloqueado)
+    usuario_id: number; // ID del usuario afectado
+    username: string; // Nombre de usuario intentado
+    intentos: number; // Cantidad de intentos fallidos
+    estado: boolean; // true=activo, false=bloqueado
 }
 
+// Intentos fallidos de códigos de recuperación
 export class FailedRecoveryCode {
-    usuario_id: number; // ID del usuario que intentó usar un código de recuperación fallido
-    username: string; // Nombre de usuario asociado al intento fallido
-    fecha: Date; // Fecha y hora del intento fallido de código de recuperación
-    estado: boolean; // Estado actual del usuario (activo o bloqueado)
+    usuario_id: number; // ID del usuario
+    username: string; // Usuario asociado
+    fecha: Date; // Fecha del intento fallido
+    estado: boolean; // Estado del usuario (activo/bloqueado)
 }
 
+// Usuarios con múltiples errores acumulados
 export class MultipleFailedUser {
-    usuario_id: number; // ID del usuario con múltiples errores (ej., de inicio de sesión o código de recuperación)
-    username: string; // Nombre de usuario con múltiples errores
-    errores: number; // Número total de errores para este usuario en el período
-    estado: boolean; // Estado actual del usuario (activo o bloqueado)
+    usuario_id: number; // ID del usuario
+    username: string; // Nombre de usuario
+    errores: number; // Total de errores registrados
+    estado: boolean; // Estado actual del usuario
 }
 
+// Direcciones IP con actividad sospechosa
 export class IpSospechosa {
-    ip: string; // Dirección IP que muestra actividad sospechosa
-    intentos: number; // Número total de intentos (fallidos o no) desde esta IP
-    userAgents: string[]; // Lista de agentes de usuario diferentes asociados a esta IP
+    ip: string; // IP identificada
+    intentos: number; // Total de intentos desde esta IP
+    userAgents: string[]; // Lista de navegadores usados
 }
 
+// Estadísticas generales de seguridad
 export class Estadisticas {
-    totalEventos: number; // Número total de eventos de seguridad registrados
-    loginExitosos: number; // Número total de inicios de sesión exitosos
-    loginFallidos: number; // Número total de intentos fallidos de inicio de sesión
-    codigosFallidos: number; // Número total de intentos fallidos de uso de códigos de recuperación
-    usuariosBloqueados: number; // Número de usuarios que están actualmente bloqueados
-    usuariosConMultiplesErrores: number; // Número de usuarios que han tenido múltiples errores
-    usuariosCreados: number; // Número de usuarios creados en el período
+    totalEventos: number; // Total de registros
+    loginExitosos: number; // Cantidad de logins exitosos
+    loginFallidos: number; // Cantidad de logins fallidos
+    codigosFallidos: number; // Códigos de recuperación erróneos
+    usuariosBloqueados: number; // Usuarios inhabilitados
+    usuariosConMultiplesErrores: number; // Usuarios con errores recurrentes
+    usuariosCreados: number; // Nuevos usuarios creados
 }
 
+// Informe diario de seguridad completo
 export class ReporteDiaDto {
-    estadisticas: Estadisticas; // Objeto que contiene las estadísticas del reporte
-    loginExitosos: LoginSuccessUser[]; // Array de usuarios que iniciaron sesión exitosamente
-    loginFallidos: LoginFailedUser[]; // Array de intentos fallidos de inicio de sesión
-    codigosFallidos: FailedRecoveryCode[]; // Array de intentos fallidos de uso de códigos de recuperación
-    usuariosConMultiplesErrores: MultipleFailedUser[]; // Array de usuarios con múltiples errores
-    ipsSospechosas: IpSospechosa[]; // Array de IPs que muestran actividad sospechosa
-    fecha: Date; // Fecha y hora en que se generó el reporte
+    estadisticas: Estadisticas; // Métricas resumidas
+    loginExitosos: LoginSuccessUser[]; // Lista de logins exitosos
+    loginFallidos: LoginFailedUser[]; // Lista de logins fallidos
+    codigosFallidos: FailedRecoveryCode[]; // Códigos de recuperación fallidos
+    usuariosConMultiplesErrores: MultipleFailedUser[]; // Usuarios con errores múltiples
+    ipsSospechosas: IpSospechosa[]; // IPs identificadas como riesgo
+    fecha: Date; // Fecha de generación del informe
 }
