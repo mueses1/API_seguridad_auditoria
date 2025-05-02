@@ -4,7 +4,7 @@ import { Repository, Between, In } from 'typeorm';
 import { EventosSeguridadService } from '../eventos-seguridad/eventos-seguridad.service';
 import { EventoSeguridad, TipoEvento } from '../eventos-seguridad/entities/eventos-seguridad.entity';
 import { Usuario } from '../usuarios/entities/usuario.entity';
-import { ReporteDiaDto, LoginSuccessUser, LoginFailedUser, FailedRecoveryCode, MultipleFailedUser } from './dto/reporte-dia.dto';
+import { ReporteDiaDto, LoginFailedUser, FailedRecoveryCode, MultipleFailedUser } from './dto/reporte-dia.dto';
 import { MailerService } from '@nestjs-modules/mailer';
 import { UsuarioConEventos } from './interfaces/usuario-con-eventos.interface';
 import { AccionAdminService } from './services/accion-admin.service';
