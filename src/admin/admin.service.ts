@@ -78,7 +78,6 @@ export class AdminService {
                 fecha: evento.fecha,
                 estado: evento.usuario?.estado || false,
             }));
-        console.log('Aprobados encontrados:', aprobados.length);
         return aprobados;
     }
 
@@ -219,7 +218,6 @@ export class AdminService {
                 fecha: evento.fecha,
                 estado: evento.usuario?.estado || false,
             }));
-        console.log('Fallidos encontrados:', fallidos.length);
         return fallidos;
     }
 
