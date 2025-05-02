@@ -1,3 +1,5 @@
+import { IsNumber, IsString, IsDate, IsBoolean } from 'class-validator';
+
 // Usuario que inició sesión exitosamente
 export class LoginSuccessUser {
     username: string; // Nombre de usuario
@@ -37,13 +39,30 @@ export class IpSospechosa {
     userAgents: string[]; // Lista de navegadores usados
 }
 
+// Códigos de verificación aprobados
+export class CodigoVerificacionAprobado {
+    @IsNumber()
+    usuario_id: number;
+
+    @IsString()
+    username: string;
+
+    @IsDate()
+    fecha: Date;
+
+    @IsBoolean()
+    estado: boolean;
+}
+
 // Estadísticas generales de seguridad
 export class Estadisticas {
     totalEventos: number; // Total de registros
     loginExitosos: number; // Cantidad de logins exitosos
     loginFallidos: number; // Cantidad de logins fallidos
     codigosFallidos: number; // Códigos de recuperación erróneos
+    codigosAprobados: number; // Códigos de verificación exitosos
     usuariosBloqueados: number; // Usuarios inhabilitados
+    usuariosDesbloqueados: number; // Usuarios activos
     usuariosConMultiplesErrores: number; // Usuarios con errores recurrentes
     usuariosCreados: number; // Nuevos usuarios creados
 }
@@ -54,6 +73,7 @@ export class ReporteDiaDto {
     loginExitosos: LoginSuccessUser[]; // Lista de logins exitosos
     loginFallidos: LoginFailedUser[]; // Lista de logins fallidos
     codigosFallidos: FailedRecoveryCode[]; // Códigos de recuperación fallidos
+    codigosAprobados: CodigoVerificacionAprobado[]; // Códigos de verificación exitosos
     usuariosConMultiplesErrores: MultipleFailedUser[]; // Usuarios con errores múltiples
     ipsSospechosas: IpSospechosa[]; // IPs identificadas como riesgo
     fecha: Date; // Fecha de generación del informe

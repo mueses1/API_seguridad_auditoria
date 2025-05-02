@@ -4,6 +4,7 @@ import { UsuariosService } from '../usuarios/usuarios.service';
 import { EventosSeguridadService } from '../eventos-seguridad/eventos-seguridad.service';
 import { MailerService } from '@nestjs-modules/mailer';
 import * as bcrypt from 'bcrypt';
+import { TipoEvento } from '../eventos-seguridad/entities/eventos-seguridad.entity';
 
 @Injectable() // Marca la clase como un servicio gestionado por NestJS
 export class AuthService {
@@ -158,7 +159,15 @@ export class AuthService {
             return { valido: false, mensaje: 'El código ha expirado' };
         }
 
-        // Si el código es válido y no ha expirado, retorna que es válido
+        // Si el código es válido y no ha expirado, registra el evento exitoso
+        const evento = await this.eventosSeguridadService.create({
+            tipo: TipoEvento.CODIGO_VERIFICACION_EXITOSO,
+            usuario_id: usuario.id,
+            ip,
+            user_agent: userAgent,
+            descripcion: `Código de verificación usado correctamente para usuario ID: ${usuario.id}`,
+        });
+        console.log('Evento exitoso guardado:', evento);
         return { valido: true };
     }
 }

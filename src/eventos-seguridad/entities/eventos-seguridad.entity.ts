@@ -3,11 +3,17 @@ import { Usuario } from '../../usuarios/entities/usuario.entity';
 
 export enum TipoEvento {
     LOGIN_EXITOSO = 'LOGIN_EXITOSO',
-    LOGIN_FALLIDO = 'LOGIN_FALLIDO', // Evento para un intento de inicio de sesión fallido
-    INTENTOS_MULTIPLES = 'INTENTOS_MULTIPLES', // Evento cuando un usuario realiza múltiples intentos fallidos
-    USUARIO_BLOQUEADO = 'USUARIO_BLOQUEADO', // Evento cuando un usuario es bloqueado
-    RESET_PASSWORD = 'RESET_PASSWORD', // Evento cuando se solicita un restablecimiento de contraseña
-    CODIGO_VERIFICACION_FALLIDO = 'CODIGO_VERIFICACION_FALLIDO', // Evento cuando la verificación de un código falla
+    LOGIN_FALLIDO = 'LOGIN_FALLIDO',
+    CODIGO_VERIFICACION_FALLIDO = 'CODIGO_VERIFICACION_FALLIDO',
+    CODIGO_VERIFICACION_EXITOSO = 'CODIGO_VERIFICACION_EXITOSO',
+    USUARIO_BLOQUEADO = 'USUARIO_BLOQUEADO',
+    USUARIO_DESBLOQUEADO = 'USUARIO_DESBLOQUEADO',
+    CAMBIO_PASSWORD = 'CAMBIO_PASSWORD',
+    RECUPERACION_PASSWORD = 'RECUPERACION_PASSWORD',
+    ACCESO_DENEGADO = 'ACCESO_DENEGADO',
+    ACTIVIDAD_SOSPECHOSA = 'ACTIVIDAD_SOSPECHOSA',
+    INTENTOS_MULTIPLES = 'INTENTOS_MULTIPLES',
+    RESET_PASSWORD = 'RESET_PASSWORD',
 }
 
 @Entity('eventos_seguridad') // Define esta clase como una entidad de base de datos con el nombre 'eventos_seguridad'
@@ -16,8 +22,9 @@ export class EventoSeguridad {
     id: number;
 
     @Column({ // Define una columna para el tipo de evento
-        type: 'enum', // Especifica que el tipo de dato es una enumeración
-        enum: TipoEvento, // Asocia la columna con la enumeración TipoEvento
+        type: 'varchar',
+        length: 50,
+        default: TipoEvento.LOGIN_EXITOSO
     })
     tipo: TipoEvento; // Tipo del evento de seguridad
 
